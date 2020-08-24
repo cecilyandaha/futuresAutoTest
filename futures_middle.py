@@ -103,7 +103,7 @@ def transferAssetInterface(data,result):
     msg={}
     resp = adjustAsset(data)
     if resp.status_code!=200 :
-        msg['划转':False]
+        msg['划转']=False
     assetOmnipotent(data[0],msg)
     result['msg'] = msg
     return result

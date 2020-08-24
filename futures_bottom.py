@@ -70,7 +70,7 @@ def adjustMarginrate(data):
 def adjustAsset(data):
     url=url_base+'/bec/api/future/asset/adjust?account='+str(data[0])
     datajson={}
-    datajson["contractId"] = data[1]           ## 合约id
+    datajson["currencyId"] = data[1]           ## 合约id
     datajson["quantity"] = data[2]               ## 数量
     datajson["updateType"] = data[3]           ## 类型 1加钱 -1扣钱
     resp=httpPost(url,datajson)
@@ -265,7 +265,9 @@ def selectMargin(variety_id,contract_id=0,user_id=0):
 ##
 
 def omnipotent(sql,standard,fname,dtype,msg):
+    print(sql)
     Actual = operSql(sql, 1)[fname]
+
     ActualToStandard(Actual,standard,dtype,fname,msg)
 
 
@@ -296,6 +298,9 @@ def assetOmnipotent(user_id,msg):
         contract_unit = c['contract_unit']
         # 查询core_posi表数据核对
         posi = selectPosi(user_id,contract_id)
+        if posi ==None:
+            continue
+
         open_amt = float(posi['open_amt'])   #开仓冻结保证金
         long_qty = int(posi['long_qty'])     #多头持仓量
         short_qty = int(posi['short_qty'])   #空头持仓量
@@ -384,6 +389,9 @@ def assetOmnipotent(user_id,msg):
     ## core_account_future 对账
     posis = selectPosi(user_id)
     account = selectAccout(user_id)
+    if account ==None:
+        return msg
+    print(account)
     total_money = account['total_money']
     order_frozen_money = account['order_frozen_money'] #委托冻结手续费
     close_profit_loss = account['close_profit_loss'] #平仓盈亏
@@ -402,7 +410,7 @@ def assetOmnipotent(user_id,msg):
                       '(SELECT  SUM(quantity) FROM core_transfer  WHERE user_id=%s AND from_appl_id=5 AND to_appl_id=2 AND currency_id=2) a, ' \
                       '(SELECT  SUM(quantity) FROM core_transfer  WHERE user_id=%s AND from_appl_id=2 AND to_appl_id=5 AND currency_id=2) s FROM DUAL )m)-' \
                       '(SELECT' \
-                      '((CASE WHEN m.bid IS NULL  THEN 0 ELSE m.bid END) + (CASE WHEN m.ask IS NULL  THEN 0 ELSE m.ask END )+del) fee ' \
+                      '((CASE WHEN m.bid IS NULL  THEN 0 ELSE m.bid END) + (CASE WHEN m.ask IS NULL  THEN 0 ELSE m.ask END )+ ( CASE WHEN m.del IS NULL THEN 0 ELSE m.del END ) ) fee ' \
                       'FROM' \
                       '(SELECT (SELECT SUM(bid_fee) FROM core_match_future WHERE bid_user_id=%s) AS bid, (SELECT SUM(ask_fee) FROM core_match_future WHERE ask_user_id=%s) as ask, ' \
                       '(SELECT SUM(delivery_fee) FROM core_delivery WHERE user_id=%s) del FROM DUAL) m)) total_money ' \
