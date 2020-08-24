@@ -31,6 +31,7 @@ def activeOrderInterface(data,result):
         respData = {'uuid': resp1.text['originalOrderId']}
         resp2 = placeOrder(data)
         textjson = json.loads(resp2.text)
+        respData = {'uuid': textjson['originalOrderId']}
 
         # 下单成功后核对数据
         if resp2.status_code != 200 :
