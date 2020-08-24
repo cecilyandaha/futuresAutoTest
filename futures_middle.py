@@ -147,7 +147,7 @@ def matchInterface(bid,ask,result):
             pass
     #核对成交数据
     match = selectMatch(data[0][0])
-    contract_id =
+    contract_id =1
 
 
 
