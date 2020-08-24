@@ -23,12 +23,12 @@ def activeOrderInterface(data,result):
     #onekeyOrder(data[0],data[1])
     # 下单
     resp1 = placeOrder(data)
-    orderjson = json.loads(resp1.text)
+    print(resp1.status_code)
     if resp1.status_code!=200 :
         msg['下单']= False
-        respData={'uuid':resp1.text['uuid']}
 
     else:
+        respData = {'uuid': resp1.text['uuid']}
         resp2 = placeOrder(data)
         textjson = json.loads(resp2.text)
 
@@ -131,19 +131,24 @@ def cancelOrderInterface(data,result):
 
 # 成交（先撤单，保证成交数据与原始数据一致）
 def matchInterface(datalist,result):
+    msg={}
     #撤单
     for data in datalist:
         # 依次撤单
-        onekeyOrder(data[0],data[1])
-
-
+        resp = onekeyOrder(data[0],data[1])
+        if resp.status_code!=200:
+            #这个写撤单失败的话直接结束流程以及给出错误提示
+            pass
     #用户下单
     for data in datalist:
         # 依次下单
-        placeOrder(data)
-
+        resp = placeOrder(data)
+        if resp.status_code!=200:
+            #这个写下单失败的话直接结束流程以及给出错误提示
+            pass
+    #核对成交数据
     for data in datalist:
-        #核对对应账户的成交的数据,对应order表数据的核对，match表对应数据的核对
+        # 核对对应账户的成交的数据,对应order表数据的核对，match表对应数据的核对
 
         # 校验数据
         assetOmnipotent(data[0], datalist['msg'])
