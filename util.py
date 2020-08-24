@@ -28,7 +28,6 @@ def httpPost(url,data,header=None):
     if header==None:
         header=header1
     resp=requests.post(url=url,data=json.dumps(data), headers=header)
-    print(resp.text)
     if resp.status_code==200:
         if json.loads(resp.text)['code'] != 0 :
             resp.status_code = 400

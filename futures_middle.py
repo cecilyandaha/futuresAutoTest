@@ -30,7 +30,6 @@ def activeOrderInterface(data,result):
     else:
         resp2 = placeOrder(data)
         textjson = json.loads(resp2.text)
-        print(textjson)
         respData = {'uuid': textjson['msg']}
 
         # 下单成功后核对数据
