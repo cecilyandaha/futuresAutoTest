@@ -30,7 +30,8 @@ def activeOrderInterface(data,result):
     else:
         resp2 = placeOrder(data)
         textjson = json.loads(resp2.text)
-        respData = {'uuid': textjson['originalOrderId']}
+        print(textjson)
+        respData = {'uuid': textjson['msg']}
 
         # 下单成功后核对数据
         if resp2.status_code != 200 :
@@ -130,32 +131,31 @@ def cancelOrderInterface(data,result):
 #  一键撤单
 
 # 成交（先撤单，保证成交数据与原始数据一致）
-def matchInterface(datalist,result):
-    msg={}
-    #撤单
-    for data in datalist:
-        # 依次撤单
-        resp = onekeyOrder(data[0],data[1])
-        if resp.status_code!=200:
-            #这个写撤单失败的话直接结束流程以及给出错误提示
-            pass
-    #用户下单
-    for data in datalist:
-        # 依次下单
-        resp = placeOrder(data)
-        if resp.status_code!=200:
-            #这个写下单失败的话直接结束流程以及给出错误提示
-            pass
-    #核对成交数据
-    match=selectMatch(data[0][0])
-    for data in datalist:
-        # 核对对应账户的成交的数据,对应order表数据的核对，match表对应数据的核对
-        if 1==1:
-            pass
-
-        # 校验数据
-        assetOmnipotent(data[0], datalist['msg'])
-    return result
+# def matchInterface(bid,ask,result):
+#     msg={}
+#     #撤单
+#         # 依次撤单
+#         resp = onekeyOrder(data[0],data[1])
+#         if resp.status_code!=200:
+#             #这个写撤单失败的话直接结束流程以及给出错误提示
+#             pass
+#     #用户下单
+#     for data in datalist:
+#         # 依次下单
+#         resp = placeOrder(data)
+#         if resp.status_code!=200:
+#             #这个写下单失败的话直接结束流程以及给出错误提示
+#             pass
+#     #核对成交数据
+#     match=selectMatch(data[0][0])
+#     for data in datalist:
+#         # 核对对应账户的成交的数据,对应order表数据的核对，match表对应数据的核对
+#         if :
+#             pass
+#
+#         # 校验数据
+#         assetOmnipotent(data[0], datalist['msg'])
+#     return result
 # CREATE TABLE `core_match_future` (
 #   `appl_id` tinyint(2) NOT NULL COMMENT '应用标识',
 #   `match_time` bigint(20) NOT NULL COMMENT '成交时间',
