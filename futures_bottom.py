@@ -282,6 +282,11 @@ def ActualToStandard(Actual,standard,dtype,fname,msg):
         if round(float(Actual),8) != round(float(standard),8):
             print(Actual, standard)
             msg[fname] = False
+    elif dtype=='str':
+        if str(Actual) != str(standard):
+            print(Actual, standard)
+            msg[fname] = False
+
 
 
 

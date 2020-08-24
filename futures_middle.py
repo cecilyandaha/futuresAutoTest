@@ -127,17 +127,21 @@ def cancelOrderInterface(data,result):
     result['msg'] = msg
     return result
 
-#  一键撤单
+# 一键撤单
+
+
+# 整个合约撤单
 
 # 成交（先撤单，保证成交数据与原始数据一致）
 def matchInterface(bid,ask,result):
     msg={}
-    #撤单
-    for data in [bid, ask]:
-        resp = onekeyOrder(bid[0], bid[1])
-        if resp.status_code != 200:
-            # 这个写撤单失败的话直接结束流程以及给出错误提示
-            pass
+    # #撤单
+    # for data in [bid, ask]:
+    #     resp = onekeyOrder(bid[0], bid[1])
+    #     if resp.status_code != 200:
+    #         # 这个写撤单失败的话直接结束流程以及给出错误提示
+    #         pass
+    #     data =   resp.text
     #用户下单
     for data in [bid,ask]:
         # 依次下单
@@ -147,7 +151,11 @@ def matchInterface(bid,ask,result):
             pass
     #核对成交数据
     match = selectMatch(data[0][0])
-    contract_id =1
+    ActualToStandard(match['contract_id'],bid[1],'int','contract_id',msg)
+    ActualToStandard(match['bid_user_id'], bid[0], 'int', 'bid_user_id', msg)
+    ActualToStandard(match['ask_user_id'], ask[0], 'int', 'ask_user_id', msg)
+    ActualToStandard(match['match_price'], ask[6], 'float', 'match_price', msg)
+    ActualToStandard(match['match_price'], ask[6], 'float', 'match_price', msg)
 
 
 

@@ -26,5 +26,9 @@ def sub(id,a, b):
 # posiQty=-1
 # aaa='bid_user_id' if posiQty<0 else 'ask_user_id'
 # print(aaa)
-m=1
-print(m if m!=None else 0)
+a=[2,2,2]
+b=[5,5,5]
+for i in [a,b]:
+    i.append(1)
+print(a)
+print(b)
