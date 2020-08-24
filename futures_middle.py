@@ -28,7 +28,7 @@ def activeOrderInterface(data,result):
         msg['下单']= False
 
     else:
-        respData = {'uuid': resp1.text['uuid']}
+        respData = {'uuid': resp1.text['originalOrderId']}
         resp2 = placeOrder(data)
         textjson = json.loads(resp2.text)
 
@@ -147,12 +147,45 @@ def matchInterface(datalist,result):
             #这个写下单失败的话直接结束流程以及给出错误提示
             pass
     #核对成交数据
+    match=selectMatch(data[0][0])
     for data in datalist:
         # 核对对应账户的成交的数据,对应order表数据的核对，match表对应数据的核对
+        if 1==1:
+            pass
 
         # 校验数据
         assetOmnipotent(data[0], datalist['msg'])
     return result
+# CREATE TABLE `core_match_future` (
+#   `appl_id` tinyint(2) NOT NULL COMMENT '应用标识',
+#   `match_time` bigint(20) NOT NULL COMMENT '成交时间',
+#   `contract_id` int(11) NOT NULL DEFAULT '0' COMMENT '交易对ID、合约号',
+#   `exec_id` varchar(36) NOT NULL DEFAULT '' COMMENT '成交编号',
+#   `bid_user_id` int(11) NOT NULL DEFAULT '0' COMMENT '买方账号ID',
+#   `ask_user_id` int(11) NOT NULL DEFAULT '0' COMMENT '卖方账号ID',
+#   `bid_order_id` varchar(36) NOT NULL DEFAULT '' COMMENT '买方委托号',
+#   `ask_order_id` varchar(36) NOT NULL DEFAULT '' COMMENT '卖方委托号',
+#   `match_price` decimal(36,18) DEFAULT NULL COMMENT '成交价',
+#   `match_qty` decimal(36,18) DEFAULT NULL COMMENT '成交数量',
+#   `match_amt` decimal(36,18) DEFAULT NULL COMMENT '成交金额',
+#   `bid_fee` decimal(36,18) DEFAULT NULL COMMENT '买方手续费',
+#   `ask_fee` decimal(36,18) DEFAULT NULL COMMENT '卖方手续费',
+#   `is_taker` tinyint(2) DEFAULT NULL COMMENT 'Taker方向',
+#   `update_time` bigint(20) DEFAULT NULL COMMENT '最近更新时间',
+#   `bid_position_effect` tinyint(2) DEFAULT NULL COMMENT '买方开平标志',
+#   `ask_position_effect` tinyint(2) DEFAULT NULL COMMENT '卖方开平标志',
+#   `bid_margin_type` tinyint(2) DEFAULT NULL COMMENT '买方保证金类型',
+#   `ask_margin_type` tinyint(2) DEFAULT NULL COMMENT '卖方保证金类型',
+#   `bid_init_rate` decimal(36,18) DEFAULT NULL COMMENT '买方初始保证金率',
+#   `ask_init_rate` decimal(36,18) DEFAULT NULL COMMENT '卖方初始保证金率',
+#   `bid_match_type` tinyint(2) DEFAULT NULL COMMENT '买方成交类型：0普通成交1强平成交2强减成交（破产方）3强减成交（盈利方）',
+#   `ask_match_type` tinyint(2) DEFAULT NULL COMMENT '卖方成交类型：0普通成交1强平成交2强减成交（破产方）3强减成交（盈利方）',
+#   `bid_pnl_type` tinyint(2) DEFAULT NULL COMMENT '买方盈亏类型：0正常成交1正常平仓2强平3强减',
+#   `ask_pnl_type` tinyint(2) DEFAULT NULL COMMENT '卖方盈亏类型：0正常成交1正常平仓2强平3强减',
+#   `bid_pnl` decimal(36,18) DEFAULT NULL COMMENT '买方平仓盈亏',
+#   `ask_pnl` decimal(36,18) DEFAULT NULL COMMENT '卖方平仓盈亏',
+#   `bid_confiscated_amt` decimal(36,18) DEFAULT NULL COMMENT '买强平罚没金额',
+#   `ask_confiscated_amt` decimal(36,18) DEFAULT NULL COMMENT '卖强平罚没金额
 
 # 调整保证金率 
 def adjustMarginRateInterfa(data,result):
