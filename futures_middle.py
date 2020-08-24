@@ -28,7 +28,6 @@ def activeOrderInterface(data,result):
         msg['下单']= False
 
     else:
-        respData = {'uuid': resp1.text['originalOrderId']}
         resp2 = placeOrder(data)
         textjson = json.loads(resp2.text)
         respData = {'uuid': textjson['originalOrderId']}
