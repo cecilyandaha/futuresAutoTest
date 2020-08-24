@@ -19,6 +19,9 @@ def httpGet(url,header=None):
     if header==None:
         header=header1
     resp=requests.get(url=url,headers=header)
+    if resp.status_code==200:
+        if resp.text['code'] != 0 :
+            resp.status_code == 400
     time.sleep(1)
     return resp
 
@@ -27,6 +30,9 @@ def httpPost(url,data,header=None):
     if header==None:
         header=header1
     resp=requests.post(url=url,data=json.dumps(data), headers=header)
+    if resp.status_code==200:
+        if resp.text['code'] != 0 :
+            resp.status_code == 400
     time.sleep(1)
     return resp
 

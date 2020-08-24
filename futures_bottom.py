@@ -25,10 +25,10 @@ def batchPlaceOrder(account,data):
 
 ## 撤单
 def cancelOrder(data):
-    url=url_base+'/bec/api/future/order/cancel?account='+str(data['account'])
+    url=url_base+'/bec/api/future/order/cancel?account='+str(data[0])
     datajson={}
-    datajson["contractId"] = data["contractId"]           ## 合约id
-    datajson["originalOrderId"] = data["originalOrderId"] ## uuid
+    datajson["contractId"] = data[2]           ## 合约id
+    datajson["originalOrderId"] = data[3] ## uuid
     resp=httpPost(url,datajson)
     return resp
 
@@ -214,6 +214,15 @@ def selectActive(account,n=0):
     result=operSql(sql,n)
     return result
 
+# 查询一条委托条件为 uuid
+def selectActiveByuuid(account,uuid):
+    tbname='core_order_future_'+str(account)[-1]
+    sql=('SELECT * FROM %s WHERE uuid=%s ' %(tbname,uuid))
+    result = operSql(sql)
+    return result
+
+
+
 # 查询最新成交
 def selectMatch(account,n=0):
     sql='SELECT * FROM core_match_future WHERE bid_user_id = '+str(account)+' or ask_user_id = '+str(account)+' ORDER BY match_time DESC '
@@ -221,6 +230,8 @@ def selectMatch(account,n=0):
         sql=sql+'LIMIT 0,1 '
     result=operSql(sql,n)
     return result
+
+
 
 # 查询持仓数据
 def selectPosi(account,contract_id=0):
@@ -254,23 +265,30 @@ def selectMargin(variety_id,contract_id=0,user_id=0):
 ##
 
 def omnipotent(sql,standard,fname,dtype,msg):
-    print(sql)
     Actual = operSql(sql, 1)[fname]
+    ActualToStandard(Actual,standard,dtype,fname,msg)
 
+
+def ActualToStandard(Actual,standard,dtype,fname,msg):
     if Actual == None:
         Actual=0
     if dtype=='int':
         if int(Actual) != int(standard):
+            print(Actual,standard)
             msg[fname] = False
     elif dtype=='float':
         if round(float(Actual),8) != round(float(standard),8):
+            print(Actual, standard)
             msg[fname] = False
+
+
 
 ##  校验
 def assetOmnipotent(user_id,msg):
     # core_contract_future获取
     contracts = selectContract()
 
+    order_frozen_money_M=0
     # core_posi数据核对（基于core_match_future和core_order_future）
     for c in contracts:
         # 获取合约id
@@ -354,6 +372,13 @@ def assetOmnipotent(user_id,msg):
                             'WHERE user_id=%s AND contract_id=%s AND order_status in (2,3) AND side=-1 AND position_effect=2' %(orderTableName,user_id,contract_id))
         omnipotent(frozenCloseQtySql, frozen_close_qty, 'frozen_close_qty', 'int', msg)
 
+        orderFrozenMoneySql = (
+                    'SELECT SUM(price*(quantity-filled_quantity)*maker_fee_ratio*%s) order_frozen_money FROM %s ' \
+                    'WHERE user_id=%s  AND order_status in (2,3)  AND contract_id=%s AND position_effect=1' % (contract_unit,orderTableName, user_id,contract_id))
+        middle = operSql(orderFrozenMoneySql,1)['order_frozen_money']
+        print(middle)
+        order_frozen_money_M+= (middle if middle!=None else 0)
+
 
 
     ## core_account_future 对账
@@ -365,53 +390,64 @@ def assetOmnipotent(user_id,msg):
     cross_posi_amt = account['cross_posi_amt']  #全仓持仓金额
     cross_posi_margin = account['cross_posi_margin'] #全仓已占用保证金
     cross_frozen_posi_margin = account['cross_frozen_posi_margin'] #全仓已冻结保证金
-    isolated_posi_amt = account['isolated_posi_amt'] 
-    isolated_posi_margin = account['isolated_posi_amt']
-    isolated_frozen_posi_margin = account['isolated_frozen_posi_margin']
+    isolated_posi_amt = account['isolated_posi_amt'] #逐仓持仓金额
+    isolated_posi_margin = account['isolated_posi_amt'] #逐仓已占用保证金
+    isolated_frozen_posi_margin = account['isolated_frozen_posi_margin']  #逐仓已冻结保证金
     # 核对 total_money total_money
     totalMoneySql = ('SELECT '
                      '((SELECT' \
                       '((CASE WHEN m.a IS NULL  THEN 0 ELSE m.a END) - (CASE WHEN m.s IS NULL  THEN 0 ELSE m.s END )) transfer ' \
                       'FROM' \
                       '(SELECT ' \
-                      '(SELECT  SUM(quantity) FROM core_transfer  WHERE user_id=%s AND from_appl_id=5 AND to_appl_id=2 AND currency_id=2) a,' \
+                      '(SELECT  SUM(quantity) FROM core_transfer  WHERE user_id=%s AND from_appl_id=5 AND to_appl_id=2 AND currency_id=2) a, ' \
                       '(SELECT  SUM(quantity) FROM core_transfer  WHERE user_id=%s AND from_appl_id=2 AND to_appl_id=5 AND currency_id=2) s FROM DUAL )m)-' \
                       '(SELECT' \
-                      '((CASE WHEN m.bid IS NULL  THEN 0 ELSE m.bid END) + (CASE WHEN m.ask IS NULL  THEN 0 ELSE m.ask END )+del) fee' \
+                      '((CASE WHEN m.bid IS NULL  THEN 0 ELSE m.bid END) + (CASE WHEN m.ask IS NULL  THEN 0 ELSE m.ask END )+del) fee ' \
                       'FROM' \
-                      '(SELECT (SELECT SUM(bid_fee) FROM core_match_future WHERE bid_user_id=%s) AS bid, (SELECT SUM(ask_fee) FROM core_match_future WHERE ask_user_id=%s) as ask,' \
-                      '(SELECT SUM(delivery_fee) FROM core_delivery WHERE user_id=%s) del FROM DUAL) m)) total_money' \
+                      '(SELECT (SELECT SUM(bid_fee) FROM core_match_future WHERE bid_user_id=%s) AS bid, (SELECT SUM(ask_fee) FROM core_match_future WHERE ask_user_id=%s) as ask, ' \
+                      '(SELECT SUM(delivery_fee) FROM core_delivery WHERE user_id=%s) del FROM DUAL) m)) total_money ' \
                       'FROM DUAL;' %(user_id,user_id,user_id,user_id,user_id) )
     omnipotent(totalMoneySql, total_money, 'total_money', 'float', msg)
 
     # 核对 order_frozen_money委托冻结手续费
-    orderFrozenMoneySql = ('SELECT SUM(price*（quantity-filled_quantity）*maker_fee_ratio) order_frozen_money FROM %s ' \
-                            'WHERE user_id=%s  AND order_status in (2,3)  AND position_effect=1' %(orderTableName,user_id))
-    omnipotent(orderFrozenMoneySql, order_frozen_money, 'order_frozen_money', 'float', msg)
+    ActualToStandard(order_frozen_money_M,order_frozen_money,'order_frozen_money', 'float', msg)
 
     # 核对 close_profit_loss平仓盈亏
-    closeProfitLossSql = ('SELECT ((SELECT SUM(bid_pnl) FROM core_match_future WHERE bid_user_id=%s)+' 
-                           '(SELECT SUM(ask_pnl) FROM core_match_future WHERE ask_user_id=%s)) close_profit_loss'
-                           'FROM DUAL;' %(user_id,user_id))
+    closeProfitLossSql = ('SELECT '
+                          '(( CASE WHEN m.bid IS NULL THEN 0 ELSE m.bid END ) + ( CASE WHEN m.ask IS NULL THEN 0 ELSE m.ask END ) ) close_profit_loss '
+                          'FROM '
+                          '( SELECT '
+                          '(SELECT SUM( bid_pnl ) FROM core_match_future WHERE bid_user_id = %s ) AS bid, '
+                          '( SELECT SUM( ask_pnl ) FROM core_match_future WHERE ask_user_id = %s ) AS ask  '
+                          'FROM DUAL ) m;' %(user_id,user_id))
     omnipotent(closeProfitLossSql, close_profit_loss, 'close_profit_loss', 'float', msg)
 
-    # 核对
+    # 核对 cross_posi_amt全仓持仓金额
+    crossPosiAmtSql = ('SELECT SUM(open_amt) cross_posi_amt FROM core_posi WHERE user_id=%s AND margin_type=1' %(user_id))
+    omnipotent(crossPosiAmtSql, cross_posi_amt, 'cross_posi_amt', 'float', msg)
 
+    # 核对 cross_posi_margin全仓已占用保证金
+    crossPosiMarginSql = ('SELECT SUM(init_margin+extra_margin) cross_posi_margin FROM core_posi WHERE user_id=%s AND margin_type=1' %(user_id))
+    omnipotent(crossPosiMarginSql, cross_posi_margin, 'cross_posi_margin', 'float', msg)
 
+    # 核对 cross_frozen_posi_margin全仓已冻结保证金
+    crossFrozenPosiMarginSql = ('SELECT SUM(frozen_init_margin + frozen_extra_margin) cross_frozen_posi_margin FROM core_posi WHERE user_id=%s AND margin_type=1' %(user_id))
+    omnipotent(crossFrozenPosiMarginSql, cross_frozen_posi_margin, 'cross_frozen_posi_margin', 'float', msg)
 
+    # 核对 isolated_posi_amt逐仓持仓金额
+    isolatedPosiAmtSql = ('SELECT SUM(open_amt) isolated_posi_amt  FROM core_posi WHERE user_id=%s AND margin_type=2' %(user_id))
+    omnipotent(isolatedPosiAmtSql, isolated_posi_amt, 'isolated_posi_amt', 'float', msg)
 
+    # 核对 isolated_posi_margin逐仓已占用保证金
+    isolatedPosiMarginSql = ('SELECT SUM(init_margin+extra_margin) isolated_posi_margin FROM core_posi WHERE user_id=%s AND margin_type=2' %(user_id))
+    omnipotent(isolatedPosiMarginSql, isolated_posi_margin, 'isolated_posi_margin', 'float', msg)
 
+    # 核对 isolated_frozen_posi_margin逐仓已冻结保证金
+    isolatedFrozenPosiMarginSql = ('SELECT SUM(frozen_init_margin + frozen_extra_margin) isolated_frozen_posi_margin FROM core_posi WHERE user_id=%s AND margin_type=2' %(user_id))
+    omnipotent(isolatedFrozenPosiMarginSql, isolated_frozen_posi_margin, 'isolated_frozen_posi_margin', 'float', msg)
 
-
-
-        # 获取用户持仓
-
-        # 获取用户委托
-
-        # 获取成交数据
     print(msg)
     return msg
-assetOmnipotent(668800,{})
 
 
 
