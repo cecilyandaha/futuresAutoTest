@@ -346,7 +346,7 @@ def assetOmnipotent(user_id,msg):
             if short_qty!=abs(posiQty):
                 msg['short_qty'] = False
         # 核对open_amt 开仓冻结保证金数据
-        # 获取core_match_future数据
+        # 获取core_match_future数据（这个地方的核算逻辑有问题）
         if posiQty == 0:
             if open_amt != 0:
                 msg['open_amt'] = False
@@ -363,8 +363,7 @@ def assetOmnipotent(user_id,msg):
                 else:
                     open_amt_M += float(m['match_amt'])
                     posiQty_L -= m['match_qty']
-            if round(open_amt,8) != round(open_amt_M,8):
-                msg['open_amt'] = False
+            ActualToStandard(open_amt,open_amt_M,'float','open_amt',msg)
 
         # 核对 frozen_init_margin委托冻结保证金
         orderTableName='core_order_future_'+ str(user_id)[-1]
@@ -406,7 +405,7 @@ def assetOmnipotent(user_id,msg):
     cross_posi_margin = account['cross_posi_margin'] #全仓已占用保证金
     cross_frozen_posi_margin = account['cross_frozen_posi_margin'] #全仓已冻结保证金
     isolated_posi_amt = account['isolated_posi_amt'] #逐仓持仓金额
-    isolated_posi_margin = account['isolated_posi_amt'] #逐仓已占用保证金
+    isolated_posi_margin = account['isolated_posi_margin'] #逐仓已占用保证金
     isolated_frozen_posi_margin = account['isolated_frozen_posi_margin']  #逐仓已冻结保证金
     # 核对 total_money total_money
     totalMoneySql = ('SELECT '
@@ -455,6 +454,7 @@ def assetOmnipotent(user_id,msg):
 
     # 核对 isolated_posi_margin逐仓已占用保证金
     isolatedPosiMarginSql = ('SELECT SUM(init_margin+extra_margin) isolated_posi_margin FROM core_posi WHERE user_id=%s AND margin_type=2' %(user_id))
+    print(isolatedPosiMarginSql)
     omnipotent(isolatedPosiMarginSql, isolated_posi_margin, 'isolated_posi_margin', 'float', msg)
 
     # 核对 isolated_frozen_posi_margin逐仓已冻结保证金

@@ -133,7 +133,7 @@ def cancelOrderInterface(data,result):
 # 成交（先撤单，保证成交数据与原始数据一致）
 #orders={'bid':[bid_user_id,contractId,marginRate,marginType,orderType,positionEffect,price,quantity,side,bid_order_id],
 #        'ask':[ask_user_id,contractId,marginRate,marginType,orderType,positionEffect,price,quantity,side,ask_order_id]}
-# flag : 为1 表示orders[1]为bid，为0表示orders[0]为bid
+# flag : 为-1 表示orders[0]为买方，为1表示orders[0]为b卖方
 def matchInterface(orders,flag,result):
     msg={}
     # #撤单
@@ -144,16 +144,16 @@ def matchInterface(orders,flag,result):
     #         pass
     #     data =   resp.text
     #用户下单
-    if flag==0:
+    if flag==-1:
         bid = orders[0]
         ask = orders[1]
-        bid.append('taker_fee_ratio')
-        ask.append('maker_fee_ratio')
+        bid.append('maker_fee_ratio')
+        ask.append('taker_fee_ratio')
     if flag==1:
         bid = orders[1]
         ask = orders[0]
-        bid.append('maker_fee_ratio')
-        ask.append('taker_fee_ratio')
+        bid.append('taker_fee_ratio')
+        ask.append('maker_fee_ratio')
     for data in orders:
         # 依次下单
         resp = placeOrder(data)
@@ -179,13 +179,13 @@ def matchInterface(orders,flag,result):
     ActualToStandard(match['match_amt'], min(bid[7],ask[7])*min(bid[6],ask[6])*contract['contract_unit'], 'float', 'match_amt', msg)
     ActualToStandard(match['bid_fee'], min(bid[7], ask[7]) * min(bid[6], ask[6]) * contract['contract_unit']*contract[bid[9]], 'float','bid_fee', msg)
     ActualToStandard(match['ask_fee'],min(bid[7], ask[7]) * min(bid[6], ask[6]) * contract['contract_unit'] * contract[ask[9]], 'float','ask_fee', msg)
-    ActualToStandard(match['is_taker'], 1 if flag==1 else -1, 'int', 'is_taker', msg)
+    ActualToStandard(match['is_taker'], flag, 'int', 'is_taker', msg)
     ActualToStandard(match['bid_position_effect'], bid[5], 'int', 'bid_position_effect', msg)
     ActualToStandard(match['ask_position_effect'], ask[5], 'int', 'ask_position_effect', msg)
     ActualToStandard(match['bid_margin_type'], bid[3], 'int', 'bid_margin_type', msg)
     ActualToStandard(match['ask_margin_type'], ask[3], 'int', 'ask_margin_type', msg)
-    ActualToStandard(match['bid_init_rate'], bid[4], 'float', 'bid_init_rate', msg)
-    ActualToStandard(match['ask_init_rate'], ask[4], 'float', 'ask_init_rate', msg)
+    # ActualToStandard(match['bid_init_rate'], bid[4], 'float', 'bid_init_rate', msg)
+    # ActualToStandard(match['ask_init_rate'], ask[4], 'float', 'ask_init_rate', msg)
     # ActualToStandard(match['bid_match_type'], 0, 'int', 'bid_match_type', msg)
     # ActualToStandard(match['ask_match_type'], 0, 'int', 'ask_match_type', msg)
 
