@@ -136,7 +136,7 @@ def getActive(account,contractid):
     # "deltaPrice": "0",
     # "frozenPrice": "1"
 
-##
+## 获取持仓
 def getPosi(account):
     url=url_base+'/bec/query/future/posi/get?account='+str(account)
     resp=httpGet(url)
@@ -250,6 +250,15 @@ def selectPosi(account,contract_id=0):
 def selectAccout(account,currency_id=2):
     sql='SELECT * FROM core_account_future WHERE user_id = '+str(account)+' AND currency_id='+str(currency_id)
     result=operSql(sql,currency_id)
+    return result
+
+# 查询某合约的所有用户
+def selectPosiUsers(contract_id=0):
+    place=''
+    if contract_id!=0:
+        place = ' where contract_id=' + str(contract_id)
+    sql='SELECT * FROM core_posi %s ORDER BY contract_id DESC ' %(place)
+    result=operSql(sql)
     return result
 
 # 获取所有合约

@@ -146,9 +146,9 @@ def onekeyOrderInterface(account,contractId,result):
 def cancelAllOrderInterface(contractId,result):
     msg={}
     # 查询所有有过该合约持仓的用户
-    users = selectPosi(contractId)
+    users = selectPosiUsers(contractId)
     for user in users:
-        onekeyOrderInterface(user['user_id'],contractId)
+        onekeyOrder(user['user_id'],contractId)
         msg['用户']=user['user_id']
         assetOmnipotent(user['user_id'], msg)
     result['msg'] = msg
@@ -182,13 +182,14 @@ def matchInterface(orders,flag,result):
     for data in orders:
         # 依次下单
         resp = placeOrder(data)
+        print(resp.text)
         if resp.status_code!=200:
             #这个写下单失败的话直接结束流程以及给出错误提示
             pass
         else:
             textjson = json.loads(resp.text)
+            print(textjson)
             data.append(textjson['msg'])
-
     #获取合约参数
     contract = selectContract(bid[1])
     #核对成交数据
@@ -233,17 +234,23 @@ def matchInterface(orders,flag,result):
 #   `bid_confiscated_amt` decimal(36,18) DEFAULT NULL COMMENT '买强平罚没金额',
 #   `ask_confiscated_amt` decimal(36,18) DEFAULT NULL COMMENT '卖强平罚没金额
 
-# 调整保证金率 
+# 调整保证金率
+#     account=data[0]                      用户id
+#     datajson["contractId"] = data[1]     合约id
+#     datajson["initMarginRate"] = data[2] 保证金率，当全仓时传0
+#     datajson["marginType"] = data[3]     全仓逐仓类型，1全仓 2逐仓
 def adjustMarginRateInterfa(data,result):
-    pass
+    msg = {'用户':data[0]}
+    resp = adjustMarginrate(data)
+    if resp.status_code!=200:
+        msg['调整保证金率']=False
+    posi = selectPosi(data[0], data[1])
+    ActualToStandard(posi(''), data[2], 'float', 'initMarginRate', msg)
+    ActualToStandard(posi(''), data[3], 'int', 'marginType', msg)
+    result['msg'] = msg
+    return result
 
-    #确认是有持仓的而且已知持仓的方向
 
-    #如果没有持仓下单造持仓
-
-    #判定有持仓后 获取是全仓还是逐仓
-
-    #如果是全仓 那进行全仓调整为逐仓的切换
 
 
 
