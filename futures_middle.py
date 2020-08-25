@@ -18,23 +18,22 @@ from util import *
     # data[8]  side 买卖方向 1买，-1卖
 
 def activeOrderInterface(data,result):
-    msg ={}
+    msg = {'用户':data[0]}
     respData={}
     #onekeyOrder(data[0],data[1])
     # 下单
-    resp2 = placeOrder(data)
-    if resp2.status_code!=200 :
-        msg['下单']= False
+    resp1 = placeOrder(data)
+    if resp1['code']!=200 :
+        msg['下单']= resp1['text']['msg']
 
     else:
-        textjson = json.loads(resp2.text)
-        respData = {'uuid': textjson['msg']}
+        respData = {'uuid': resp1['text']['msg']}
+        resp3 = getActive(data[0], data[1])
 
         # 下单成功后核对数据
-        if resp2.status_code != 200 :
+        if resp3.status_code != 200 :
             msg['获取委托'] = False
         else:
-            resp3= getActive(data[0],data[1])
             redisjson = json.loads(resp3.text)
             redisOrder=redisjson[0]
             mysqlOrder = selectActive(data[0], 1)
@@ -97,10 +96,10 @@ def activeOrderInterface(data,result):
 # 资金划转测试接口
 def transferAssetInterface(data,result):
     ##划转
-    msg={}
+    msg = {'用户': data[0]}
     resp = adjustAsset(data)
-    if resp.status_code!=200 :
-        msg['划转']=False
+    if resp['code']!=200 :
+        msg['划转']=resp['text']['msg']
     assetOmnipotent(data[0],msg)
     result['msg'] = msg
     return result
@@ -109,11 +108,11 @@ def transferAssetInterface(data,result):
 # data [0] user_id,[1] contractId,[2] originalOrderId(uuid)
 def cancelOrderInterface(data,result):
     # 撤单
-    msg={}
+    msg = {'用户': data[0]}
     # 查询订单
     resp = cancelOrder(data)
-    if resp.status_code!=200:
-        msg['撤单']=False
+    if resp['code']!=200:
+        msg['撤单']=resp['text']['msg']
     time.sleep(2)
     order2 = selectActiveByuuid(data[2])
     # 查询该订单数据 order_status 、quantity = canceled_quantity+filled_quantity、
@@ -127,12 +126,12 @@ def cancelOrderInterface(data,result):
 
 # 一键撤单
 def onekeyOrderInterface(account,contractId,result):
-    msg = {}
+    msg = {'用户':account}
     resp = onekeyOrder(account,contractId)
     print(resp.status_code)
     print(resp.text)
-    if resp.status_code!=200:
-        msg['撤单'] = False
+    if resp['code']!=200:
+        msg['撤单'] = resp['text']['msg']
     else:
         resp = getActive(account,contractId)
         if resp.text!='[]':
@@ -148,8 +147,9 @@ def cancelAllOrderInterface(contractId,result):
     # 查询所有有过该合约持仓的用户
     users = selectPosiUsers(contractId)
     for user in users:
-        onekeyOrder(user['user_id'],contractId)
-        msg['用户']=user['user_id']
+        resp = onekeyOrder(user['user_id'],contractId)
+        if resp['code']!=200:
+            msg['用户'+str(user['user_id']+'撤单')]=resp['text']['msg']
         assetOmnipotent(user['user_id'], msg)
     result['msg'] = msg
     return result
@@ -183,13 +183,12 @@ def matchInterface(orders,flag,result):
         # 依次下单
         resp = placeOrder(data)
         print(resp.text)
-        if resp.status_code!=200:
-            #这个写下单失败的话直接结束流程以及给出错误提示
+        if resp['code']==200:
+            msg['用户'+str(data[0])+'下单']=resp['text']['msg']
             pass
         else:
-            textjson = json.loads(resp.text)
-            print(textjson)
-            data.append(textjson['msg'])
+
+            data.append(resp['text']['msg'])
     #获取合约参数
     contract = selectContract(bid[1])
     #核对成交数据
@@ -242,11 +241,15 @@ def matchInterface(orders,flag,result):
 def adjustMarginRateInterfa(data,result):
     msg = {'用户':data[0]}
     resp = adjustMarginrate(data)
-    if resp.status_code!=200:
-        msg['调整保证金率']=False
+    if resp['code']!=200:
+        msg['调整保证金']=resp['text']['msg']
     posi = selectPosi(data[0], data[1])
-    ActualToStandard(posi(''), data[2], 'float', 'initMarginRate', msg)
-    ActualToStandard(posi(''), data[3], 'int', 'marginType', msg)
+    if data[3] ==1:
+        ActualToStandard(posi['margin_type'], data[3], 'int', 'marginType', msg)
+    elif data[3] ==2:
+        ActualToStandard(posi['init_rate'], data[2], 'float', 'initMarginRate', msg)
+        ActualToStandard(posi['margin_type'], data[3], 'int', 'marginType', msg)
+
     result['msg'] = msg
     return result
 

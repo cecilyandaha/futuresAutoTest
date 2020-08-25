@@ -9,7 +9,10 @@ from futures_middle import  *
 # print(result)
 
 # result = onekeyOrderInterface(668802,1,{'测试项':'一键撤单'})
-result = cancelAllOrderInterface(1,{'测试项':'一键撤单'})
-print(result)
+# result = cancelAllOrderInterface(1,{'测试项':'一键撤单'})
+# print(result)
 #result = matchInterface([[668802,1,0.1,2,1,1,400,1,1],[668803,1,0.1,2,1,1,400,1,-1]],-1,{'测试项':'全仓持仓成交'})
 #print(result)
+
+result=adjustMarginRateInterfa([666667,2,0.2,2],{'测试项':'调整保证金'})
+print(result)

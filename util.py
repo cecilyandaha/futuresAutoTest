@@ -28,11 +28,14 @@ def httpPost(url,data,header=None):
     if header==None:
         header=header1
     resp=requests.post(url=url,data=json.dumps(data), headers=header)
+    resdata={}
     if resp.status_code==200:
+        resdata['code'] = 200
         if json.loads(resp.text)['code'] != 0 :
-            resp.status_code = 400
-    time.sleep(1)
-    return resp
+            resdata['code']=400
+    text = json.loads(resp.text)
+    resdata['text'] = text
+    return resdata
 
 #操作数据库
 def operSql(sql,n=0):
