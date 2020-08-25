@@ -143,13 +143,21 @@ def onekeyOrderInterface(account,contractId,result):
 
 
 # 整个合约撤单
-def cancelAllOrderInterface(contractId):
-    pass
+def cancelAllOrderInterface(contractId,result):
+    msg={}
+    # 查询所有有过该合约持仓的用户
+    users = selectPosi(contractId)
+    for user in users:
+        onekeyOrderInterface(user['user_id'],contractId)
+        msg['用户']=user['user_id']
+        assetOmnipotent(user['user_id'], msg)
+    result['msg'] = msg
+    return result
 
 
 # 成交（先撤单，保证成交数据与原始数据一致）
-#orders={'bid':[bid_user_id,contractId,marginRate,marginType,orderType,positionEffect,price,quantity,side,bid_order_id],
-#        'ask':[ask_user_id,contractId,marginRate,marginType,orderType,positionEffect,price,quantity,side,ask_order_id]}
+#orders=[[bid_user_id,contractId,marginRate,marginType,orderType,positionEffect,price,quantity,side,bid_order_id],
+#        [ask_user_id,contractId,marginRate,marginType,orderType,positionEffect,price,quantity,side,ask_order_id]]
 # flag : 为-1 表示orders[0]为买方，为1表示orders[0]为卖方
 def matchInterface(orders,flag,result):
     msg={}
@@ -208,7 +216,9 @@ def matchInterface(orders,flag,result):
         ActualToStandard(match['bid_init_rate'], bid[4], 'float', 'bid_init_rate', msg)
     # ActualToStandard(match['bid_match_type'], 0, 'int', 'bid_match_type', msg)
     # ActualToStandard(match['ask_match_type'], 0, 'int', 'ask_match_type', msg)
+    msg['用户'] = ask[0]
     assetOmnipotent(ask[0], msg)
+    msg['用户'] = bid[0]
     assetOmnipotent(bid[0], msg)
     result['msg'] = msg
     return result
