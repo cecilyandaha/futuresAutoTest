@@ -126,14 +126,31 @@ def cancelOrderInterface(data,result):
     return result
 
 # 一键撤单
+def onekeyOrderInterface(account,contractId,result):
+    msg = {}
+    resp = onekeyOrder(account,contractId)
+    print(resp.status_code)
+    print(resp.text)
+    if resp.status_code!=200:
+        msg['撤单'] = False
+    else:
+        resp = getActive(account,contractId)
+        if resp.text!='[]':
+            msg['撤单'] = False
+        assetOmnipotent(account, msg)
+    result['msg'] = msg
+    return result
 
 
 # 整个合约撤单
+def cancelAllOrderInterface(contractId):
+    pass
+
 
 # 成交（先撤单，保证成交数据与原始数据一致）
 #orders={'bid':[bid_user_id,contractId,marginRate,marginType,orderType,positionEffect,price,quantity,side,bid_order_id],
 #        'ask':[ask_user_id,contractId,marginRate,marginType,orderType,positionEffect,price,quantity,side,ask_order_id]}
-# flag : 为-1 表示orders[0]为买方，为1表示orders[0]为b卖方
+# flag : 为-1 表示orders[0]为买方，为1表示orders[0]为卖方
 def matchInterface(orders,flag,result):
     msg={}
     # #撤单
@@ -184,12 +201,15 @@ def matchInterface(orders,flag,result):
     ActualToStandard(match['ask_position_effect'], ask[5], 'int', 'ask_position_effect', msg)
     ActualToStandard(match['bid_margin_type'], bid[3], 'int', 'bid_margin_type', msg)
     ActualToStandard(match['ask_margin_type'], ask[3], 'int', 'ask_margin_type', msg)
-    # ActualToStandard(match['bid_init_rate'], bid[4], 'float', 'bid_init_rate', msg)
-    # ActualToStandard(match['ask_init_rate'], ask[4], 'float', 'ask_init_rate', msg)
+    ## 逐仓的时候进行了核对 全仓时没有核对
+    if bid[3]==2:
+        ActualToStandard(match['bid_init_rate'], bid[4], 'float', 'bid_init_rate', msg)
+    if ask[3]==2:
+        ActualToStandard(match['bid_init_rate'], bid[4], 'float', 'bid_init_rate', msg)
     # ActualToStandard(match['bid_match_type'], 0, 'int', 'bid_match_type', msg)
     # ActualToStandard(match['ask_match_type'], 0, 'int', 'ask_match_type', msg)
-
-    assetOmnipotent(data[0], msg)
+    assetOmnipotent(ask[0], msg)
+    assetOmnipotent(bid[0], msg)
     result['msg'] = msg
     return result
 # CREATE TABLE `core_match_future` (

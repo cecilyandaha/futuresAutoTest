@@ -97,6 +97,9 @@ def getAsset(account):
     # "allFdProfitLossAll": null
 
 ## 获取当前委托
+
+
+
 def getActive(account,contractid):
     url=url_base+'/bec/query/future/order/active/get?account='+str(account)+'&contractId='+str(contractid)
     resp=httpGet(url)
