@@ -44,11 +44,10 @@ def activeOrderInterface(data,result):
             if redisOrder['contractId'] != data[1]or mysqlOrder['contract_id'] != data[1]:
                 msg['contractId'] = False
             if data[3]==1:
-                if float(redisOrder['initMarginRate']) != float(mysqlOrder['margin_rate']) :
-                    msg['margin_rate'] = False
+                ActualToStandard(redisOrder['initMarginRate'], mysqlOrder['margin_rate'], 'float', 'margin_rate', msg)
             else:
-                if float(redisOrder['initMarginRate']) != float(mysqlOrder['margin_rate']) or float(redisOrder['initMarginRate']!=data[2])  :
-                    msg['margin_rate'] = False
+                ActualToStandard(redisOrder['initMarginRate'], mysqlOrder['margin_rate'], 'float', 'margin_rate', msg)
+                ActualToStandard(redisOrder['initMarginRate'], data[2], 'float', 'margin_rate', msg)
             if redisOrder['marginType'] != data[3] and mysqlOrder['margin_type'] != data[3]:
                 msg['marginType'] = False
             if redisOrder['orderType'] != data[4] and mysqlOrder['order_type'] != data[4]:
@@ -148,13 +147,13 @@ def matchInterface(orders,flag,result):
     if flag==0:
         bid = orders[0]
         ask = orders[1]
-        bid[10] = 'taker_fee_ratio'
-        ask[10] = 'maker_fee_ratio'
+        bid.append('taker_fee_ratio')
+        ask.append('maker_fee_ratio')
     if flag==1:
         bid = orders[1]
         ask = orders[0]
-        bid[10] = 'maker_fee_ratio'
-        ask[10] = 'taker_fee_ratio'
+        bid.append('maker_fee_ratio')
+        ask.append('taker_fee_ratio')
     for data in orders:
         # 依次下单
         resp = placeOrder(data)
@@ -163,24 +162,24 @@ def matchInterface(orders,flag,result):
             pass
         else:
             textjson = json.loads(resp.text)
-            respData = {'uuid': textjson['msg']}
-            data.append(respData)
+            data.append(textjson['msg'])
+
     #获取合约参数
     contract = selectContract(bid[1])
     #核对成交数据
     time.sleep(2)
-    match = selectMatch(data[0][0])
+    match = selectMatch(bid[0],1)
     ActualToStandard(match['contract_id'],bid[1],'int','contract_id',msg)
     ActualToStandard(match['bid_user_id'], bid[0], 'int', 'bid_user_id', msg)
     ActualToStandard(match['ask_user_id'], ask[0], 'int', 'ask_user_id', msg)
     ActualToStandard(match['match_price'], min(bid[6],ask[6]), 'float', 'match_price', msg)
-    ActualToStandard(match['match_qty'], min(bid[7],ask[7]), 'float', 'match_price', msg)
-    ActualToStandard(match['bid_order_id'], bid[9], 'str', 'match_price', msg)
-    ActualToStandard(match['ask_order_id'], ask[9], 'str', 'match_price', msg)
+    ActualToStandard(match['match_qty'], min(bid[7],ask[7]), 'float', 'match_qty', msg)
+    ActualToStandard(match['bid_order_id'], bid[10], 'str', 'bid_order_id', msg)
+    ActualToStandard(match['ask_order_id'], ask[10], 'str', 'ask_order_id', msg)
     ActualToStandard(match['match_amt'], min(bid[7],ask[7])*min(bid[6],ask[6])*contract['contract_unit'], 'float', 'match_amt', msg)
-    ActualToStandard(match['bid_fee'], min(bid[7], ask[7]) * min(bid[6], ask[6]) * contract['contract_unit']*contract[bid[10]], 'float','bid_fee', msg)
-    ActualToStandard(match['ask_fee'],min(bid[7], ask[7]) * min(bid[6], ask[6]) * contract['contract_unit'] * contract[ask[10]], 'float','ask_fee', msg)
-    ActualToStandard(match['is_taker'], 1 if flag==0 else -1, 'int', 'is_taker', msg)
+    ActualToStandard(match['bid_fee'], min(bid[7], ask[7]) * min(bid[6], ask[6]) * contract['contract_unit']*contract[bid[9]], 'float','bid_fee', msg)
+    ActualToStandard(match['ask_fee'],min(bid[7], ask[7]) * min(bid[6], ask[6]) * contract['contract_unit'] * contract[ask[9]], 'float','ask_fee', msg)
+    ActualToStandard(match['is_taker'], 1 if flag==1 else -1, 'int', 'is_taker', msg)
     ActualToStandard(match['bid_position_effect'], bid[5], 'int', 'bid_position_effect', msg)
     ActualToStandard(match['ask_position_effect'], ask[5], 'int', 'ask_position_effect', msg)
     ActualToStandard(match['bid_margin_type'], bid[3], 'int', 'bid_margin_type', msg)
@@ -191,6 +190,7 @@ def matchInterface(orders,flag,result):
     # ActualToStandard(match['ask_match_type'], 0, 'int', 'ask_match_type', msg)
 
     assetOmnipotent(data[0], msg)
+    result['msg'] = msg
     return result
 # CREATE TABLE `core_match_future` (
 #   `appl_id` tinyint(2) NOT NULL COMMENT '应用标识',

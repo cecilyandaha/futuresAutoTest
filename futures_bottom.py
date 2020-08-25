@@ -1,5 +1,6 @@
 from util import *
-url_base='http://192.168.104.132:8301'
+#url_base='http://192.168.104.132:8301'
+url_base='http://192.168.105.155:8445'
 
 ## 下单
 def placeOrder(data):
@@ -265,26 +266,27 @@ def selectMargin(variety_id,contract_id=0,user_id=0):
 ##
 
 def omnipotent(sql,standard,fname,dtype,msg):
-    print(sql)
+    #print(sql)
     Actual = operSql(sql, 1)[fname]
 
     ActualToStandard(Actual,standard,dtype,fname,msg)
 
 
 def ActualToStandard(Actual,standard,dtype,fname,msg):
+
     if Actual == None:
         Actual=0
     if dtype=='int':
         if int(Actual) != int(standard):
-            print(Actual,standard)
+            print(fname,Actual,standard)
             msg[fname] = False
     elif dtype=='float':
         if round(float(Actual),8) != round(float(standard),8):
-            print(Actual, standard)
+            print(fname,Actual, standard)
             msg[fname] = False
     elif dtype=='str':
         if str(Actual) != str(standard):
-            print(Actual, standard)
+            print(fname,Actual, standard)
             msg[fname] = False
 
 
@@ -386,7 +388,7 @@ def assetOmnipotent(user_id,msg):
                     'SELECT SUM(price*(quantity-filled_quantity)*maker_fee_ratio*%s) order_frozen_money FROM %s ' \
                     'WHERE user_id=%s  AND order_status in (2,3)  AND contract_id=%s AND position_effect=1' % (contract_unit,orderTableName, user_id,contract_id))
         middle = operSql(orderFrozenMoneySql,1)['order_frozen_money']
-        print(middle)
+        #print(middle)
         order_frozen_money_M+= (middle if middle!=None else 0)
 
 
@@ -396,7 +398,7 @@ def assetOmnipotent(user_id,msg):
     account = selectAccout(user_id)
     if account ==None:
         return msg
-    print(account)
+    #print(account)
     total_money = account['total_money']
     order_frozen_money = account['order_frozen_money'] #委托冻结手续费
     close_profit_loss = account['close_profit_loss'] #平仓盈亏
