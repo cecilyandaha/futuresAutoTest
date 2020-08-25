@@ -14,5 +14,8 @@ from futures_middle import  *
 #result = matchInterface([[668802,1,0.1,2,1,1,400,1,1],[668803,1,0.1,2,1,1,400,1,-1]],-1,{'测试项':'全仓持仓成交'})
 #print(result)
 
-result=adjustMarginRateInterfa([666667,2,0.2,2],{'测试项':'调整保证金'})
+result=adjustMarginRateInterface([668801,2,0.4,2],{'测试项':'调整保证金'})
+print(result)
+
+result=adjustMarginInterface([668801,2,10],{'测试项':'调整保证金'})
 print(result)

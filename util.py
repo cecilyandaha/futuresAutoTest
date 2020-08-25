@@ -33,8 +33,11 @@ def httpPost(url,data,header=None):
         resdata['code'] = 200
         if json.loads(resp.text)['code'] != 0 :
             resdata['code']=400
+    else:
+        resdata['code']=400
     text = json.loads(resp.text)
     resdata['text'] = text
+    time.sleep(2)
     return resdata
 
 #操作数据库

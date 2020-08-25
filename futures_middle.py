@@ -238,20 +238,43 @@ def matchInterface(orders,flag,result):
 #     datajson["contractId"] = data[1]     合约id
 #     datajson["initMarginRate"] = data[2] 保证金率，当全仓时传0
 #     datajson["marginType"] = data[3]     全仓逐仓类型，1全仓 2逐仓
-def adjustMarginRateInterfa(data,result):
+def adjustMarginRateInterface(data,result):
     msg = {'用户':data[0]}
+    #调整保证金
     resp = adjustMarginrate(data)
     if resp['code']!=200:
-        msg['调整保证金']=resp['text']['msg']
+        msg['调整保证金率']=resp['text']['msg']
+    #获取持仓数据核对
     posi = selectPosi(data[0], data[1])
     if data[3] ==1:
         ActualToStandard(posi['margin_type'], data[3], 'int', 'marginType', msg)
     elif data[3] ==2:
         ActualToStandard(posi['init_rate'], data[2], 'float', 'initMarginRate', msg)
         ActualToStandard(posi['margin_type'], data[3], 'int', 'marginType', msg)
-
+    assetOmnipotent(data[0], msg)
     result['msg'] = msg
     return result
+
+# 调整保证金
+#     account = data[0]
+#     datajson["contractId"] = data[1]    ## 合约id
+#     datajson["margin"] = data[2]        ## 调整金额，可以正负，不能为0
+def adjustMarginInterface(data,result):
+    msg = {'用户':data[0]}
+    #获取持仓数据
+    posi1 = selectPosi(data[0], data[1])
+    #调整保证金
+    resp = adjustMargin(data)
+    if resp['code']!=200:
+        msg['调整保证金']=resp['text']['msg']
+    #获取持仓数据核对 init_margin不变 ，extra_margin2=extra_margin1+data[2]
+    posi2 = selectPosi(data[0], data[1])
+    ActualToStandard(posi2['extra_margin'], posi1['extra_margin']+data[2], 'int', 'marginType', msg)
+    assetOmnipotent(data[0], msg)
+    result['msg'] = msg
+    return result
+
+
 
 
 

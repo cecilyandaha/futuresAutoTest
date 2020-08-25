@@ -66,6 +66,7 @@ def adjustMarginrate(data):
     resp=httpPost(url,datajson)
     return resp
 
+adjustMarginrate([666666,2,0.2,2])
 
 ## 资金红充蓝补
 def adjustAsset(data):
