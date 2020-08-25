@@ -22,13 +22,11 @@ def activeOrderInterface(data,result):
     respData={}
     #onekeyOrder(data[0],data[1])
     # 下单
-    resp1 = placeOrder(data)
-    print(resp1.status_code)
-    if resp1.status_code!=200 :
+    resp2 = placeOrder(data)
+    if resp2.status_code!=200 :
         msg['下单']= False
 
     else:
-        resp2 = placeOrder(data)
         textjson = json.loads(resp2.text)
         respData = {'uuid': textjson['msg']}
 
@@ -170,6 +168,7 @@ def matchInterface(orders,flag,result):
     #获取合约参数
     contract = selectContract(bid[1])
     #核对成交数据
+    time.sleep(2)
     match = selectMatch(data[0][0])
     ActualToStandard(match['contract_id'],bid[1],'int','contract_id',msg)
     ActualToStandard(match['bid_user_id'], bid[0], 'int', 'bid_user_id', msg)
@@ -188,10 +187,8 @@ def matchInterface(orders,flag,result):
     ActualToStandard(match['ask_margin_type'], ask[3], 'int', 'ask_margin_type', msg)
     ActualToStandard(match['bid_init_rate'], bid[4], 'float', 'bid_init_rate', msg)
     ActualToStandard(match['ask_init_rate'], ask[4], 'float', 'ask_init_rate', msg)
-    ActualToStandard(match['bid_match_type'], 0, 'int', 'bid_match_type', msg)
-    ActualToStandard(match['ask_match_type'], 0, 'int', 'ask_match_type', msg)
-
-
+    # ActualToStandard(match['bid_match_type'], 0, 'int', 'bid_match_type', msg)
+    # ActualToStandard(match['ask_match_type'], 0, 'int', 'ask_match_type', msg)
 
     assetOmnipotent(data[0], msg)
     return result
@@ -199,8 +196,6 @@ def matchInterface(orders,flag,result):
 #   `appl_id` tinyint(2) NOT NULL COMMENT '应用标识',
 #   `match_time` bigint(20) NOT NULL COMMENT '成交时间',
 #   `exec_id` varchar(36) NOT NULL DEFAULT '' COMMENT '成交编号',
-
-
 #   `bid_pnl_type` tinyint(2) DEFAULT NULL COMMENT '买方盈亏类型：0正常成交1正常平仓2强平3强减',
 #   `ask_pnl_type` tinyint(2) DEFAULT NULL COMMENT '卖方盈亏类型：0正常成交1正常平仓2强平3强减',
 #   `bid_pnl` decimal(36,18) DEFAULT NULL COMMENT '买方平仓盈亏',
