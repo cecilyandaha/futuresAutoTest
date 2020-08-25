@@ -274,6 +274,24 @@ def adjustMarginInterface(data,result):
     result['msg'] = msg
     return result
 
+# 持仓数据获取
+def getPosiInterface(account,contractId):
+    posi = selectPosi(account,contractId)
+    posi['init_margin'] = float(posi['init_margin'])
+    posi['extra_margin'] = float(posi['extra_margin'])
+    posi['init_rate'] = float(posi['init_rate'])
+    posi['warning_rate'] = float(posi['warning_rate'])
+    posi['maintain_rate'] = float(posi['maintain_rate'])
+    posi['open_amt'] = float(posi['open_amt'])
+    posi['long_qty'] = int(posi['long_qty'])
+    posi['short_qty'] = int(posi['short_qty'])
+    posi['frozen_long_qty'] = int(posi['frozen_long_qty'])
+    posi['frozen_short_qty'] = int(posi['frozen_short_qty'])
+    posi['frozen_short_qty'] = int(posi['frozen_close_qty'])
+    print(posi)
+    return posi
+
+
 
 
 
