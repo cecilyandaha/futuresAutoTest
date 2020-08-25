@@ -27,8 +27,8 @@ def batchPlaceOrder(account,data):
 def cancelOrder(data):
     url=url_base+'/bec/api/future/order/cancel?account='+str(data[0])
     datajson={}
-    datajson["contractId"] = data[2]           ## 合约id
-    datajson["originalOrderId"] = data[3] ## uuid
+    datajson["contractId"] = data[1]           ## 合约id
+    datajson["originalOrderId"] = data[2] ## uuid
     resp=httpPost(url,datajson)
     return resp
 
@@ -218,7 +218,7 @@ def selectActive(account,n=0):
 def selectActiveByuuid(account,uuid):
     tbname='core_order_future_'+str(account)[-1]
     sql=('SELECT * FROM %s WHERE uuid=%s ' %(tbname,uuid))
-    result = operSql(sql)
+    result = operSql(sql,1)
     return result
 
 

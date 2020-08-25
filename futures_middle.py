@@ -117,9 +117,10 @@ def cancelOrderInterface(data,result):
     resp = cancelOrder(data)
     if resp.status_code!=200:
         msg['撤单']=False
+    time.sleep(2)
     order2 = selectActiveByuuid(data[2])
     # 查询该订单数据 order_status 、quantity = canceled_quantity+filled_quantity、
-    if order2['order_status'] !=5 or order2['order_status'] !=6:
+    if order2['order_status'] !=5 and order2['order_status'] !=6:
         msg['order_status'] = False
     if int(order2['canceled_quantity'] + order2['filled_quantity']) != int(order2['quantity']):
         msg['order_status'] = False
@@ -133,7 +134,10 @@ def cancelOrderInterface(data,result):
 # 整个合约撤单
 
 # 成交（先撤单，保证成交数据与原始数据一致）
-def matchInterface(bid,ask,result):
+#orders={'bid':[bid_user_id,contractId,marginRate,marginType,orderType,positionEffect,price,quantity,side,bid_order_id],
+#        'ask':[ask_user_id,contractId,marginRate,marginType,orderType,positionEffect,price,quantity,side,ask_order_id]}
+# flag : 为1 表示orders[1]为bid，为0表示orders[0]为bid
+def matchInterface(orders,flag,result):
     msg={}
     # #撤单
     # for data in [bid, ask]:
@@ -143,19 +147,49 @@ def matchInterface(bid,ask,result):
     #         pass
     #     data =   resp.text
     #用户下单
-    for data in [bid,ask]:
+    if flag==0:
+        bid = orders[0]
+        ask = orders[1]
+        bid[10] = 'taker_fee_ratio'
+        ask[10] = 'maker_fee_ratio'
+    if flag==1:
+        bid = orders[1]
+        ask = orders[0]
+        bid[10] = 'maker_fee_ratio'
+        ask[10] = 'taker_fee_ratio'
+    for data in orders:
         # 依次下单
         resp = placeOrder(data)
         if resp.status_code!=200:
             #这个写下单失败的话直接结束流程以及给出错误提示
             pass
+        else:
+            textjson = json.loads(resp.text)
+            respData = {'uuid': textjson['msg']}
+            data.append(respData)
+    #获取合约参数
+    contract = selectContract(bid[1])
     #核对成交数据
     match = selectMatch(data[0][0])
     ActualToStandard(match['contract_id'],bid[1],'int','contract_id',msg)
     ActualToStandard(match['bid_user_id'], bid[0], 'int', 'bid_user_id', msg)
     ActualToStandard(match['ask_user_id'], ask[0], 'int', 'ask_user_id', msg)
-    ActualToStandard(match['match_price'], ask[6], 'float', 'match_price', msg)
-    ActualToStandard(match['match_price'], ask[6], 'float', 'match_price', msg)
+    ActualToStandard(match['match_price'], min(bid[6],ask[6]), 'float', 'match_price', msg)
+    ActualToStandard(match['match_qty'], min(bid[7],ask[7]), 'float', 'match_price', msg)
+    ActualToStandard(match['bid_order_id'], bid[9], 'str', 'match_price', msg)
+    ActualToStandard(match['ask_order_id'], ask[9], 'str', 'match_price', msg)
+    ActualToStandard(match['match_amt'], min(bid[7],ask[7])*min(bid[6],ask[6])*contract['contract_unit'], 'float', 'match_amt', msg)
+    ActualToStandard(match['bid_fee'], min(bid[7], ask[7]) * min(bid[6], ask[6]) * contract['contract_unit']*contract[bid[10]], 'float','bid_fee', msg)
+    ActualToStandard(match['ask_fee'],min(bid[7], ask[7]) * min(bid[6], ask[6]) * contract['contract_unit'] * contract[ask[10]], 'float','ask_fee', msg)
+    ActualToStandard(match['is_taker'], 1 if flag==0 else -1, 'int', 'is_taker', msg)
+    ActualToStandard(match['bid_position_effect'], bid[5], 'int', 'bid_position_effect', msg)
+    ActualToStandard(match['ask_position_effect'], ask[5], 'int', 'ask_position_effect', msg)
+    ActualToStandard(match['bid_margin_type'], bid[3], 'int', 'bid_margin_type', msg)
+    ActualToStandard(match['ask_margin_type'], ask[3], 'int', 'ask_margin_type', msg)
+    ActualToStandard(match['bid_init_rate'], bid[4], 'float', 'bid_init_rate', msg)
+    ActualToStandard(match['ask_init_rate'], ask[4], 'float', 'ask_init_rate', msg)
+    ActualToStandard(match['bid_match_type'], 0, 'int', 'bid_match_type', msg)
+    ActualToStandard(match['ask_match_type'], 0, 'int', 'ask_match_type', msg)
 
 
 
@@ -164,27 +198,9 @@ def matchInterface(bid,ask,result):
 # CREATE TABLE `core_match_future` (
 #   `appl_id` tinyint(2) NOT NULL COMMENT '应用标识',
 #   `match_time` bigint(20) NOT NULL COMMENT '成交时间',
-#   `contract_id` int(11) NOT NULL DEFAULT '0' COMMENT '交易对ID、合约号',
 #   `exec_id` varchar(36) NOT NULL DEFAULT '' COMMENT '成交编号',
-#   `bid_user_id` int(11) NOT NULL DEFAULT '0' COMMENT '买方账号ID',
-#   `ask_user_id` int(11) NOT NULL DEFAULT '0' COMMENT '卖方账号ID',
-#   `bid_order_id` varchar(36) NOT NULL DEFAULT '' COMMENT '买方委托号',
-#   `ask_order_id` varchar(36) NOT NULL DEFAULT '' COMMENT '卖方委托号',
-#   `match_price` decimal(36,18) DEFAULT NULL COMMENT '成交价',
-#   `match_qty` decimal(36,18) DEFAULT NULL COMMENT '成交数量',
-#   `match_amt` decimal(36,18) DEFAULT NULL COMMENT '成交金额',
-#   `bid_fee` decimal(36,18) DEFAULT NULL COMMENT '买方手续费',
-#   `ask_fee` decimal(36,18) DEFAULT NULL COMMENT '卖方手续费',
-#   `is_taker` tinyint(2) DEFAULT NULL COMMENT 'Taker方向',
-#   `update_time` bigint(20) DEFAULT NULL COMMENT '最近更新时间',
-#   `bid_position_effect` tinyint(2) DEFAULT NULL COMMENT '买方开平标志',
-#   `ask_position_effect` tinyint(2) DEFAULT NULL COMMENT '卖方开平标志',
-#   `bid_margin_type` tinyint(2) DEFAULT NULL COMMENT '买方保证金类型',
-#   `ask_margin_type` tinyint(2) DEFAULT NULL COMMENT '卖方保证金类型',
-#   `bid_init_rate` decimal(36,18) DEFAULT NULL COMMENT '买方初始保证金率',
-#   `ask_init_rate` decimal(36,18) DEFAULT NULL COMMENT '卖方初始保证金率',
-#   `bid_match_type` tinyint(2) DEFAULT NULL COMMENT '买方成交类型：0普通成交1强平成交2强减成交（破产方）3强减成交（盈利方）',
-#   `ask_match_type` tinyint(2) DEFAULT NULL COMMENT '卖方成交类型：0普通成交1强平成交2强减成交（破产方）3强减成交（盈利方）',
+
+
 #   `bid_pnl_type` tinyint(2) DEFAULT NULL COMMENT '买方盈亏类型：0正常成交1正常平仓2强平3强减',
 #   `ask_pnl_type` tinyint(2) DEFAULT NULL COMMENT '卖方盈亏类型：0正常成交1正常平仓2强平3强减',
 #   `bid_pnl` decimal(36,18) DEFAULT NULL COMMENT '买方平仓盈亏',
