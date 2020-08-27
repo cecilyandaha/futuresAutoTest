@@ -219,6 +219,14 @@ def selectActive(account,n=0):
     result=operSql(sql,n)
     return result
 
+# 查询某个合约所有状态为2和3的合约
+def selectActive(account,contractId,n=0):
+    tbname='core_order_future_'+str(account)[-1]
+    sql='SELECT * FROM '+ tbname +' WHERE user_id='+str(account)+' AND contract_id = '+str(contractId)+' AND order_status in (2,3) ORDER BY uuid DESC '
+    if n==1:
+        sql=sql+'LIMIT 0,1 '
+    result=operSql(sql,n)
+    return result
 # 查询一条委托条件为 uuid
 def selectActiveByuuid(account,uuid):
     tbname='core_order_future_'+str(account)[-1]
@@ -276,15 +284,15 @@ def selectMargin(variety_id,contract_id=0,user_id=0):
     sql='SELECT * FROM core_margin WHERE variety_id='+str(variety_id)+' AND contract_id='+str(contract_id)+' AND user_id='+str(user_id)+' ORDER BY posi_qty DESC '
     result=operSql(sql,contract_id)
     return result
-##
 
+## sql获取数据统一比对方法
 def omnipotent(sql,standard,fname,dtype,msg):
     #print(sql)
     Actual = operSql(sql, 1)[fname]
 
     ActualToStandard(Actual,standard,dtype,fname,msg)
 
-
+# 统一比对方法
 def ActualToStandard(Actual,standard,dtype,fname,msg):
 
     if Actual == None:

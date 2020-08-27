@@ -291,24 +291,71 @@ def getPosiInterface(account,contractId):
     print(posi)
     return posi
 
+# 检查合约持仓是否处于强平状态
+def isFlatInterface(account,contract_id):
+    backdata = {contract_id:None}
+    posi = selectPosi(account,contract_id)
+    backdata[contract_id] = posi['posi_status']
+    return backdata
+
 # 强平价格验证流程
 def forceFlatInterface(account):
     flPrices=[]
     # 获取基础数据posi、account、指数、标记价格
     account = selectAccout(account)
     prices = getAllPrice()
-    posi = selectPosi()
+    posi = selectPosi(account)
+    contracts = selectContract()
 
     #通过公式计算出强平价格
-    #逐仓强平价格 = 合约持仓均价-合约方向*(逐仓开仓保证金+逐仓额外保证金+逐仓浮动盈亏（除本合约以外）-逐仓持仓维持保证金)（合约张数*合约单位）
-    #全仓强平价格 = 合约持仓均价-合约方向*(账户余额-逐仓冻结保证金-逐仓占用保证金-逐仓冻结手续费+全仓浮动盈亏（除本合约以外）-全仓持仓维持保证金-全仓委托维持保证金)/（合约张数*合约单位）
+    #逐仓强平价格 = 合约持仓均价-合约方向*(逐仓开仓保证金+逐仓额外保证金-逐仓持仓维持保证金)/（合约张数*合约单位）
+    #全仓强平价格 = 合约持仓均价-合约方向*(账户余额-逐仓冻结保证金-逐仓占用保证金-冻结手续费+全仓浮动盈亏（除本合约以外）-全仓持仓维持保证金-全仓委托维持保证金)/（合约张数*合约单位）
+    # 计算所有合约的浮动盈亏
+
+
+
+
+    # 计算所有合约的维保
+
     for p in posi:
-        flPrice =0
+        contract = selectContract(p['contract_id'])
+        flPrice=0
+        # 如果该合约有持仓就进行计算
+        if (p['long_qty']+p['short_qty'])!=0:
+            # 该合约为逐仓
+            if p['margin_type'] == 2:
+                flPrice = p['open_amt'] / (p['long_qty'] + p['short_qty']) - (
+                            p['init_margin'] + p['extra_margin'] - p['maintain_rate'] * p['open_amt']) / (
+                                      p['long_qty'] - p['short_qty']) / contract['contract_unit']
+            # 该合约为全仓
+            elif p['margin_type'] == 1:
+                #计算浮动盈亏和委托维保
+                float_profit_loss = 0 #浮动盈亏
+                active_maintain_margin = 0 #委托维保
+                # 一次遍历每个合约
+                for pos in posi:
+                    # 如果是全仓合约
+                    if pos['margin_type'] == 1:
+                        conc = selectContract(pos['contract_id'])
+                        # 如果有持仓计算浮动盈亏
+                        if (pos['long_qty'] + pos['short_qty']) != 0 and pos['contract_id']!=p['contract_id']:
+                            float_profit_loss += (pos['open_amt'] / (pos['long_qty'] + pos['short_qty']) - prices[
+                                pos['contract_id']]) * conc['contract_unit'] * (pos['long_qty'] - pos['short_qty'])
+                        # 如果有委托计算委托维保
+                        if (pos['frozen_long_qty'] + pos['frozen_short_qty']) != 0:
+                            actives = selectActive(account,pos['contract_id'])
+                            for active in actives:
+                                active_maintain_margin+=(active['quantity']-active['filled_quantity'])*active['price']* conc['contract_unit']*pos['maintain_rate']
+                flPrice = p['open_amt'] / (p['long_qty'] + p['short_qty']) \
+                          - (account['total_money'] - account['close_profit_loss']
+                             - account['isolated_frozen_posi_margin'] - p['isolated_posi_margin']
+                             - p['order_frozen_money'] + float_profit_loss-active_maintain_margin- p['maintain_rate'] * p['open_amt'])\
+                             /(p['long_qty'] - p['short_qty']) * contract['contract_unit']
 
-#强平验证流程
+        print({p['contract_id']:flPrice})
 
 
-
+    #强平验证流程
     #指数推送到接近强平价格但不触发强平，做边界值校验
 
     #指数推送到强平价格，读取core_
