@@ -1,4 +1,5 @@
 import time
+from decimal import Decimal
 
 from futures_bottom import *
 from util import *
@@ -40,7 +41,7 @@ def activeOrderInterface(data,result):
             contract = selectContract(data[1])
             if redisOrder['accountId'] != data[0] or mysqlOrder['user_id'] != data[0]:
                 msg['accountId'] = False
-            if redisOrder['contractId'] != data[1]or mysqlOrder['contract_id'] != data[1]:
+            if redisOrder['contractId'] != data[1] or mysqlOrder['contract_id'] != data[1]:
                 msg['contractId'] = False
             if data[3]==1:
                 ActualToStandard(redisOrder['initMarginRate'], mysqlOrder['margin_rate'], 'float', 'margin_rate', msg)
@@ -114,7 +115,7 @@ def cancelOrderInterface(data,result):
     if resp['code']!=200:
         msg['撤单']=resp['text']['msg']
     time.sleep(2)
-    order2 = selectActiveByuuid(data[2])
+    order2 = selectActiveByuuid(data[0],data[2])
     # 查询该订单数据 order_status 、quantity = canceled_quantity+filled_quantity、
     if order2['order_status'] !=5 and order2['order_status'] !=6:
         msg['order_status'] = False
@@ -128,13 +129,14 @@ def cancelOrderInterface(data,result):
 def onekeyOrderInterface(account,contractId,result):
     msg = {'用户':account}
     resp = onekeyOrder(account,contractId)
-    print(resp.status_code)
-    print(resp.text)
+    # print(resp.status_code)
+    # print(resp.text)
     if resp['code']!=200:
         msg['撤单'] = resp['text']['msg']
     else:
         resp = getActive(account,contractId)
-        if resp.text!='[]':
+        print(resp)
+        if resp['text']!=[]:
             msg['撤单'] = False
         assetOmnipotent(account, msg)
     result['msg'] = msg
@@ -182,12 +184,11 @@ def matchInterface(orders,flag,result):
     for data in orders:
         # 依次下单
         resp = placeOrder(data)
-        print(resp.text)
-        if resp['code']==200:
+        # print(resp)
+        if resp['code']!=200:
             msg['用户'+str(data[0])+'下单']=resp['text']['msg']
-            pass
+            data.append(0)
         else:
-
             data.append(resp['text']['msg'])
     #获取合约参数
     contract = selectContract(bid[1])
@@ -288,7 +289,7 @@ def getPosiInterface(account,contractId):
     posi['frozen_long_qty'] = int(posi['frozen_long_qty'])
     posi['frozen_short_qty'] = int(posi['frozen_short_qty'])
     posi['frozen_short_qty'] = int(posi['frozen_close_qty'])
-    print(posi)
+    # print(posi)
     return posi
 
 # 检查合约持仓是否处于强平状态
@@ -299,12 +300,12 @@ def isFlatInterface(account,contract_id):
     return backdata
 
 # 强平价格验证流程
-def forceFlatInterface(account):
+def forceFlatInterface(accountId):
     flPrices=[]
     # 获取基础数据posi、account、指数、标记价格
-    account = selectAccout(account)
+    account = selectAccout(accountId)
     prices = getAllPrice()
-    posi = selectPosi(account)
+    posi = selectPosi(accountId)
     contracts = selectContract()
 
     #通过公式计算出强平价格
@@ -324,13 +325,14 @@ def forceFlatInterface(account):
         if (p['long_qty']+p['short_qty'])!=0:
             # 该合约为逐仓
             if p['margin_type'] == 2:
-                flPrice = p['open_amt'] / (p['long_qty'] + p['short_qty']) - (
+                flPrice = p['open_amt'] / (p['long_qty'] + p['short_qty'])/contract['contract_unit'] - (
                             p['init_margin'] + p['extra_margin'] - p['maintain_rate'] * p['open_amt']) / (
                                       p['long_qty'] - p['short_qty']) / contract['contract_unit']
             # 该合约为全仓
             elif p['margin_type'] == 1:
                 #计算浮动盈亏和委托维保
                 float_profit_loss = 0 #浮动盈亏
+                posi_maintain_margin = 0 #持仓维保
                 active_maintain_margin = 0 #委托维保
                 # 一次遍历每个合约
                 for pos in posi:
@@ -338,19 +340,33 @@ def forceFlatInterface(account):
                     if pos['margin_type'] == 1:
                         conc = selectContract(pos['contract_id'])
                         # 如果有持仓计算浮动盈亏
-                        if (pos['long_qty'] + pos['short_qty']) != 0 and pos['contract_id']!=p['contract_id']:
-                            float_profit_loss += (pos['open_amt'] / (pos['long_qty'] + pos['short_qty']) - prices[
-                                pos['contract_id']]) * conc['contract_unit'] * (pos['long_qty'] - pos['short_qty'])
+                        print(pos['contract_id'])
+                        if (pos['long_qty'] + pos['short_qty']) != 0 :
+                            posi_maintain_margin+=p['maintain_rate'] * p['open_amt']
+                            if pos['contract_id']!=p['contract_id']:
+                                float_profit_loss += (pos['open_amt'] / (pos['long_qty'] + pos['short_qty']) / conc[
+                                    'contract_unit'] \
+                                                      - Decimal.from_float(prices[pos['contract_id']]['clearPrice'])) \
+                                                     * conc['contract_unit'] * (pos['long_qty'] - pos['short_qty'])
+
                         # 如果有委托计算委托维保
                         if (pos['frozen_long_qty'] + pos['frozen_short_qty']) != 0:
-                            actives = selectActive(account,pos['contract_id'])
+                            actives = selectActives(accountId,pos['contract_id'])
                             for active in actives:
                                 active_maintain_margin+=(active['quantity']-active['filled_quantity'])*active['price']* conc['contract_unit']*pos['maintain_rate']
-                flPrice = p['open_amt'] / (p['long_qty'] + p['short_qty']) \
-                          - (account['total_money'] - account['close_profit_loss']
-                             - account['isolated_frozen_posi_margin'] - p['isolated_posi_margin']
-                             - p['order_frozen_money'] + float_profit_loss-active_maintain_margin- p['maintain_rate'] * p['open_amt'])\
-                             /(p['long_qty'] - p['short_qty']) * contract['contract_unit']
+                flPrice = p['open_amt'] / (p['long_qty'] + p['short_qty'])/contract['contract_unit'] \
+                          - (account['total_money'] + account['close_profit_loss']
+                             - account['isolated_frozen_posi_margin'] - account['isolated_posi_margin']
+                             - account['order_frozen_money'] + float_profit_loss-active_maintain_margin- posi_maintain_margin)\
+                             /(p['long_qty'] - p['short_qty']) / contract['contract_unit']
+                print(p['open_amt'] / (p['long_qty'] + p['short_qty'])/contract['contract_unit'] )
+                print(account['total_money'] + account['close_profit_loss'])
+                print( account['isolated_frozen_posi_margin'] + account['isolated_posi_margin']
+                             +account['order_frozen_money'])
+                print(account['order_frozen_money'] )
+                print(float_profit_loss)
+                print(posi_maintain_margin)
+                print((p['long_qty'] - p['short_qty']) / contract['contract_unit'])
 
         print({p['contract_id']:flPrice})
 

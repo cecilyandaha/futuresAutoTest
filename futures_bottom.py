@@ -220,7 +220,7 @@ def selectActive(account,n=0):
     return result
 
 # 查询某个合约所有状态为2和3的合约
-def selectActive(account,contractId,n=0):
+def selectActives(account,contractId,n=0):
     tbname='core_order_future_'+str(account)[-1]
     sql='SELECT * FROM '+ tbname +' WHERE user_id='+str(account)+' AND contract_id = '+str(contractId)+' AND order_status in (2,3) ORDER BY uuid DESC '
     if n==1:
@@ -379,7 +379,7 @@ def assetOmnipotent(user_id,msg):
             posiQty_L = posiQty
             for m in matchs:
                 if m['match_qty'] > abs(posiQty_L):
-                    open_amt_M += m['match_price']*posiQty_L
+                    open_amt_M += float(m['match_price']*posiQty_L)
                     break
                 else:
                     open_amt_M += float(m['match_amt'])
@@ -482,7 +482,6 @@ def assetOmnipotent(user_id,msg):
     isolatedFrozenPosiMarginSql = ('SELECT SUM(frozen_init_margin + frozen_extra_margin) isolated_frozen_posi_margin FROM core_posi WHERE user_id=%s AND margin_type=2' %(user_id))
     omnipotent(isolatedFrozenPosiMarginSql, isolated_frozen_posi_margin, 'isolated_frozen_posi_margin', 'float', msg)
 
-    print(msg)
     return msg
 
 ## 获取合约指数和标记价格
@@ -490,8 +489,8 @@ def getPrice(contractId):
     backdata={'clearPrice':0,'indexPrice':0}
     resp = getQuot(contractId)
     if resp['code']==200:
-        backdata['clearPrice']= resp['text']['clearPrice']
-        backdata['indexPrice'] = resp['text']['indexPrice']
+        backdata['clearPrice'] = float(resp['text']['clearPrice'])
+        backdata['indexPrice'] = float(resp['text']['indexPrice'])
     return backdata
 
 ## 控制指数价格
