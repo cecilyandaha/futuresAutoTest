@@ -2,6 +2,7 @@ import configparser
 import random
 #import numpy as np
 import time
+import redis
 
 import requests
 import json
@@ -19,9 +20,8 @@ def httpGet(url,header=None):
     if header==None:
         header=header1
     resp=requests.get(url=url,headers=header)
-    print(resp.text)
-    time.sleep(1)
-    return resp
+    resdata={'code':resp.status_code,'text':json.loads(resp.text)}
+    return resdata
 
 #http post请求
 def httpPost(url,data,header=None):
@@ -68,7 +68,20 @@ def operSql(sql,n=0):
     return rs
 
 
+# 操作redis
+def operateRedis(operate,key,value=0,db=0,):
+    config = configparser.ConfigParser()
+    config.read("conf.ini")
+    host = config['Redis']['host']
+    port = int(config['Redis']['port'])
+    password = config['Redis']['password']
+    r = redis.Redis(host=host, port=port, password=password,db=db)
+    if operate=='get':
+        backdata = r.get(key)
+        return backdata
+    elif operate=='set':
+        r.set(key, value)
+        return True
+    return None
 
 
-# for i in range(10):
-#     print( str(random.random()*10**18))

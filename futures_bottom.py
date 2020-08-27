@@ -66,7 +66,7 @@ def adjustMarginrate(data):
     resp=httpPost(url,datajson)
     return resp
 
-adjustMarginrate([666666,2,0.2,2])
+
 
 ## 资金红充蓝补
 def adjustAsset(data):
@@ -166,8 +166,9 @@ def getPosi(account):
 
 #获取指数、标记价格
 def getQuot(contractId):
-    url=url_base+'/bec/query/future/quot/get?account='+str(contractId)
+    url=url_base+'/bec/query/future/quot/get?contractId='+str(contractId)
     resp=httpGet(url)
+    print(resp)
     return resp
 
     # "messageType": 4,
@@ -207,7 +208,6 @@ def getQuot(contractId):
     # "window24hTotalTurnover": null,
     # "lastUpdateId": 0,
     # "contractStatus": 2
-
 
 # 查询数据
 # 查询最新一条委托
@@ -476,6 +476,33 @@ def assetOmnipotent(user_id,msg):
 
     print(msg)
     return msg
+
+## 获取合约指数和标记价格
+def getPrice(contractId):
+    backdata={'clearPrice':0,'indexPrice':0}
+    resp = getQuot(contractId)
+    if resp['code']==200:
+        backdata['clearPrice']= resp['text']['clearPrice']
+        backdata['indexPrice'] = resp['text']['indexPrice']
+    return backdata
+
+## 控制指数价格
+def controlIndexPrice(vatieyId,price):
+    key='PriceSlefSetValue_'+str(vatieyId)
+    backdata = operateRedis('set',key,price,0)
+    return backdata
+
+## 查询所有合约的指数和标记价格
+def getAllPrice():
+    backdata={}
+    contracts = selectContract()
+    for c in contracts:
+        backdata[c['contract_id']] = getPrice(c['contract_id'])
+    return  backdata
+
+
+
+
 
 
 

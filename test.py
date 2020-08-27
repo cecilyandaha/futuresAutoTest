@@ -26,9 +26,15 @@ def sub(id,a, b):
 # posiQty=-1
 # aaa='bid_user_id' if posiQty<0 else 'ask_user_id'
 # print(aaa)
-a=[2,2,2]
-b=[5,5,5]
-for i in [a,b]:
-    i.append(1)
-print(a)
-print(b)
+#!/usr/bin/python 2 #-*-coding:utf-8-*- 3
+import time
+import zmq
+
+context = zmq.Context()
+socket = context.socket(zmq.PUB)
+#socket.setsockopt(zmq.IDENTITY,'')
+socket.bind("tcp://localhost:8809")
+
+while True:
+    time.sleep(2)
+    print (socket.send(1))

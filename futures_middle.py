@@ -31,10 +31,10 @@ def activeOrderInterface(data,result):
         resp3 = getActive(data[0], data[1])
 
         # 下单成功后核对数据
-        if resp3.status_code != 200 :
+        if resp3['code']!= 200 :
             msg['获取委托'] = False
         else:
-            redisjson = json.loads(resp3.text)
+            redisjson = resp3['text']
             redisOrder=redisjson[0]
             mysqlOrder = selectActive(data[0], 1)
             contract = selectContract(data[1])
@@ -290,6 +290,29 @@ def getPosiInterface(account,contractId):
     posi['frozen_short_qty'] = int(posi['frozen_close_qty'])
     print(posi)
     return posi
+
+# 强平价格验证流程
+def forceFlatInterface(account):
+    flPrices=[]
+    # 获取基础数据posi、account、指数、标记价格
+    account = selectAccout(account)
+    prices = getAllPrice()
+    posi = selectPosi()
+
+    #通过公式计算出强平价格
+    #逐仓强平价格 = 合约持仓均价-合约方向*(逐仓开仓保证金+逐仓额外保证金+逐仓浮动盈亏（除本合约以外）-逐仓持仓维持保证金)（合约张数*合约单位）
+    #全仓强平价格 = 合约持仓均价-合约方向*(账户余额-逐仓冻结保证金-逐仓占用保证金-逐仓冻结手续费+全仓浮动盈亏（除本合约以外）-全仓持仓维持保证金-全仓委托维持保证金)/（合约张数*合约单位）
+    for p in posi:
+        flPrice =0
+
+#强平验证流程
+
+
+
+    #指数推送到接近强平价格但不触发强平，做边界值校验
+
+    #指数推送到强平价格，读取core_
+
 
 
 
