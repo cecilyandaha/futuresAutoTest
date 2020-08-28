@@ -76,7 +76,8 @@ def activeOrderInterface(data,result):
                 msg['orderStatus'] = False
     assetOmnipotent(data[0],msg)
     result['msg'] = msg
-    return result,respData
+    result['respData']=respData
+    return result
 
         # "matchQty": "0",
         # "matchAmt": "0",
@@ -135,7 +136,6 @@ def onekeyOrderInterface(account,contractId,result):
         msg['撤单'] = resp['text']['msg']
     else:
         resp = getActive(account,contractId)
-        print(resp)
         if resp['text']!=[]:
             msg['撤单'] = False
         assetOmnipotent(account, msg)
@@ -294,13 +294,13 @@ def getPosiInterface(account,contractId):
 
 # 检查合约持仓是否处于强平状态
 def isFlatInterface(account,contract_id):
-    backdata = {contract_id:None}
     posi = selectPosi(account,contract_id)
-    backdata[contract_id] = posi['posi_status']
-    return backdata
+
+    return posi['posi_status']
 
 # 强平价格验证流程
-def forceFlatInterface(accountId):
+def forceFlatPriceInterface(accountId,result):
+    msg={}
     flPrices=[]
     # 获取基础数据posi、account、指数、标记价格
     account = selectAccout(accountId)
@@ -312,10 +312,6 @@ def forceFlatInterface(accountId):
     #逐仓强平价格 = 合约持仓均价-合约方向*(逐仓开仓保证金+逐仓额外保证金-逐仓持仓维持保证金)/（合约张数*合约单位）
     #全仓强平价格 = 合约持仓均价-合约方向*(账户余额-逐仓冻结保证金-逐仓占用保证金-冻结手续费+全仓浮动盈亏（除本合约以外）-全仓持仓维持保证金-全仓委托维持保证金)/（合约张数*合约单位）
     # 计算所有合约的浮动盈亏
-
-
-
-
     # 计算所有合约的维保
 
     for p in posi:
@@ -340,7 +336,6 @@ def forceFlatInterface(accountId):
                     if pos['margin_type'] == 1:
                         conc = selectContract(pos['contract_id'])
                         # 如果有持仓计算浮动盈亏
-                        print(pos['contract_id'])
                         if (pos['long_qty'] + pos['short_qty']) != 0 :
                             posi_maintain_margin+=p['maintain_rate'] * p['open_amt']
                             if pos['contract_id']!=p['contract_id']:
@@ -359,24 +354,87 @@ def forceFlatInterface(accountId):
                              - account['isolated_frozen_posi_margin'] - account['isolated_posi_margin']
                              - account['order_frozen_money'] + float_profit_loss-active_maintain_margin- posi_maintain_margin)\
                              /(p['long_qty'] - p['short_qty']) / contract['contract_unit']
-                print(p['open_amt'] / (p['long_qty'] + p['short_qty'])/contract['contract_unit'] )
-                print(account['total_money'] + account['close_profit_loss'])
-                print( account['isolated_frozen_posi_margin'] + account['isolated_posi_margin']
-                             +account['order_frozen_money'])
-                print(account['order_frozen_money'] )
-                print(float_profit_loss)
-                print(posi_maintain_margin)
-                print((p['long_qty'] - p['short_qty']) / contract['contract_unit'])
+        flPrices.append({'contract_id':p['contract_id'],'flPrice':float(flPrice),'side': ( 1 if p['long_qty']!=0 else -1)
+                            ,'variety':contract['variety_id'],'clearPrice':prices[p['contract_id']]['clearPrice']})
+    result['flPrices']=flPrices
+    return flPrices
 
-        print({p['contract_id']:flPrice})
-
-
+## 强平验证流程
+def foreFlatInterface(accountId,flPrices,result):
+    msg={}
     #强平验证流程
-    #指数推送到接近强平价格但不触发强平，做边界值校验
+    for f in flPrices:
+        #指数推送到接近强平价格但不触发强平，做边界值校验
+        #判断方向
+        ctrprice=0
+        if f['side'] == 1:
+            #做多持仓调整指数价格为flPrice+0.001
+            ctrprice = round(f['flPrice'] + 0.001, 4)
+        if f['side'] == -1:
+            #做空持仓调整指数价格为flPrice-0.001
+            ctrprice = round(f['flPrice'] - 0.001, 4)
+        for i in range(3):
+            controlIndexPrice(f['variety'], ctrprice)
+            time.sleep()
+            if ctrprice == getPrice(f['contract_id'])['clearPrice']:
+                break
+            elif i == 2:
+                msg['指数设置到强平边界值'+str(f['contract_id'])]=False
+                result['msg'] = msg
+                return result
+        if isFlatInterface(accountId,f['contract_id'])!=0:
+            msg['强平边界值验证']=False
+            result['msg'] = msg
+            return result
+        for i in range(3):
+            controlIndexPrice(f['variety'], f['clearPrice'])
+            time.sleep()
+            if f['clearPrice'] == getPrice(f['contract_id'])['clearPrice']:
+                break
+            elif i == 2:
+                msg['指数从强平边界值设置回原值'+str(f['contract_id'])]=False
+                result['msg'] = msg
+                return result
+        #指数推送到强平价格
+        #判断方向
+        ctrprice=0
+        if f['side'] == 1:
+            #做多持仓调整指数价格为flPrice+0.001
+            ctrprice = round(f['flPrice'] - 0.00001, 6)
+        if f['side'] == -1:
+            #做空持仓调整指数价格为flPrice-0.001
+            ctrprice = round(f['flPrice'] + 0.00001, 5)
+        for i in range(3):
+            controlIndexPrice(f['variety'], ctrprice)
+            time.sleep()
+            if ctrprice == getPrice(f['contract_id'])['clearPrice']:
+                break
+            elif i == 2:
+                msg['指数设置到强平价格'+str(f['contract_id'])]=False
+                result['msg'] = msg
+                return result
+        if isFlatInterface(accountId,f['contract_id'])!=1:
+            msg['强平验证']=False
+            result['msg'] = msg
+            return result
+        for i in range(3):
+            controlIndexPrice(f['variety'], f['clearPrice'])
+            time.sleep()
+            if f['clearPrice'] == getPrice(f['contract_id'])['clearPrice']:
+                break
+            elif i == 2:
+                msg['指数从强平设置回原值'+str(f['contract_id'])]=False
+                result['msg'] = msg
+                return result
 
-    #指数推送到强平价格，读取core_
 
 
+
+
+
+#指数推送到强平价格，读取core_
+
+forceFlatInterface(668803)
 
 
 

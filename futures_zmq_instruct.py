@@ -12,7 +12,7 @@ def to_decimal(f, p = 6):
 
 
 
-#指数推送
+#参数更新推送
 def pushIndex():
     datajson={}
     datajson['message_type'] = 5009
@@ -21,7 +21,7 @@ def pushIndex():
 
 if __name__ == '__main__':
     TRADE_SERVER_URL = 'tcp://192.168.1.211:20060'
-    TRADE_client_URL = 'tcp://192.168.1.150:20050'
+    #TRADE_client_URL = 'tcp://192.168.1.150:20050'
     context = zmq.Context()
     socket = context.socket(zmq.DEALER)
     socket.connect(TRADE_SERVER_URL)
