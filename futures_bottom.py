@@ -168,7 +168,6 @@ def getPosi(account):
 def getQuot(contractId):
     url=url_base+'/bec/query/future/quot/get?contractId='+str(contractId)
     resp=httpGet(url)
-    print(resp)
     return resp
 
     # "messageType": 4,
@@ -488,6 +487,7 @@ def assetOmnipotent(user_id,msg):
 def getPrice(contractId):
     backdata={'clearPrice':0,'indexPrice':0}
     resp = getQuot(contractId)
+
     if resp['code']==200:
         backdata['clearPrice'] = float(resp['text']['clearPrice'])
         backdata['indexPrice'] = float(resp['text']['indexPrice'])

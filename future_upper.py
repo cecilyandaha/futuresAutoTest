@@ -81,7 +81,7 @@ from futures_middle import *
 
 
 
-result = activeOrderInterface([668803,2,0,1,1,1,11500,10,1],{'测试项':'全仓做多委托2'})
+#result = activeOrderInterface([668803,2,0,1,1,1,11500,10,1],{'测试项':'全仓做多委托2'})
 # print(result)
 # result = activeOrderInterface([668802,1,0,1,1,1,800,1,-1],{'测试项':'全仓做空委托'})
 # print(result)

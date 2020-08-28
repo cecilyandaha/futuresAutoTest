@@ -375,8 +375,7 @@ def foreFlatInterface(accountId,flPrices,result):
             ctrprice = round(f['flPrice'] - 0.001, 4)
         for i in range(3):
             controlIndexPrice(f['variety'], ctrprice)
-            print(ctrprice)
-            print(getPrice(f['contract_id'])['clearPrice'])
+            print('强平边界值：%f ： %f '%(ctrprice,getPrice(f['contract_id'])['clearPrice']))
             if ctrprice == getPrice(f['contract_id'])['clearPrice']:
                 break
             elif i == 2:
@@ -398,6 +397,8 @@ def foreFlatInterface(accountId,flPrices,result):
             ctrprice = round(f['flPrice'] + 0.00001, 6)
         for i in range(3):
             controlIndexPrice(f['variety'], ctrprice)
+            print('强平：%f ： %f ' % (ctrprice, getPrice(f['contract_id'])['clearPrice']))
+            time.sleep(5)
             if ctrprice == getPrice(f['contract_id'])['clearPrice']:
                 break
             elif i == 2:
@@ -410,7 +411,7 @@ def foreFlatInterface(accountId,flPrices,result):
             return result
         for i in range(3):
             controlIndexPrice(f['variety'], f['clearPrice'])
-            time.sleep()
+            time.sleep(5)
             if f['clearPrice'] == getPrice(f['contract_id'])['clearPrice']:
                 break
             elif i == 2:
@@ -454,7 +455,7 @@ def tiggerForeInterface(accountId,contractId,flPrices,result,falg=0):
                 all_qty = selectPosi(accountId, contractId)['long_qty'] + selectPosi(accountId, contractId)['short_qty']
                 +selectPosi(accountId, contractId)['frozen_long_qty']+selectPosi(accountId, contractId)['frozen_short_qty']+selectPosi(accountId, contractId)['frozen_close_qty']
                 if float(all_qty)!=0:
-                    msg['强平验证'] = False
+                    msg['强减验证'] = False
                     result['msg'] = msg
                     result['state'] = False
                     return result
