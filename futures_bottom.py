@@ -497,6 +497,7 @@ def getPrice(contractId):
 def controlIndexPrice(vatieyId,price):
     key='PriceSlefSetValue_'+str(vatieyId)
     backdata = operateRedis('set',key,price,0)
+    time.sleep(3)
     return backdata
 
 ## 查询所有合约的指数和标记价格

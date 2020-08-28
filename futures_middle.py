@@ -375,7 +375,6 @@ def foreFlatInterface(accountId,flPrices,result):
             ctrprice = round(f['flPrice'] - 0.001, 4)
         for i in range(3):
             controlIndexPrice(f['variety'], ctrprice)
-            time.sleep(3)
             print(ctrprice)
             print(getPrice(f['contract_id'])['clearPrice'])
             if ctrprice == getPrice(f['contract_id'])['clearPrice']:
@@ -399,7 +398,6 @@ def foreFlatInterface(accountId,flPrices,result):
             ctrprice = round(f['flPrice'] + 0.00001, 6)
         for i in range(3):
             controlIndexPrice(f['variety'], ctrprice)
-            time.sleep()
             if ctrprice == getPrice(f['contract_id'])['clearPrice']:
                 break
             elif i == 2:
@@ -438,7 +436,6 @@ def tiggerForeInterface(accountId,contractId,flPrices,result,falg=0):
                 ctrprice = round(f['flPrice'] + 0.00001, 6)
             for i in range(3):
                 controlIndexPrice(f['variety'], ctrprice)
-                time.sleep()
                 if ctrprice == getPrice(f['contract_id'])['clearPrice']:
                     break
                 elif i == 2:
