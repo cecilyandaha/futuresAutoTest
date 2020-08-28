@@ -426,7 +426,7 @@ def foreFlatInterface(accountId,flPrices,result):
                 msg['指数从强平设置回原值'+str(f['contract_id'])]=False
                 result['msg'] = msg
                 return result
-
+    return result
 
 
 
@@ -434,7 +434,7 @@ def foreFlatInterface(accountId,flPrices,result):
 
 #指数推送到强平价格，读取core_
 
-forceFlatInterface(668803)
+
 
 
 
