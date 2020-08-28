@@ -2,10 +2,10 @@ from futures_middle import *
 
 # # 红冲蓝补
 # # 蓝补
-# result = transferAssetInterface([668802,2,200000,1],{'测试项':'蓝补资金'})
+# result = transferAssetInterface([668803,2,1000,1],{'测试项':'蓝补资金'})
 # print(result)
 # # 红冲
-# result = transferAssetInterface([668803,2,99000,-1],{'测试项':'红冲资金'})
+# result = transferAssetInterface([668803,2,990,-1],{'测试项':'红冲资金'})
 # print(result)
 #
 # # 限价委托多次下单：委托流程5
@@ -97,10 +97,12 @@ from futures_middle import *
 # print(result)
 #
 # # 无委托持仓：全仓多笔成交
+
 # result = matchInterface([[668802,1,0,1,1,1,400,1,1],[668803,1,0,1,1,1,400,1,-1]],-1,{'测试项':'全仓持仓成交1'})
 # print(result)
-# result = matchInterface([[668802,1,0,1,1,1,401,2,-1],[668803,1,0,1,1,1,401,2,1]],1,{'测试项':'全仓持仓成交2'})
+# result = matchInterface([[668802,2,0,1,1,1,11600,1,-1],[668803,2,0,1,1,1,11600,1,1]],1,{'测试项':'全仓持仓成交2'})
 # print(result)
+
 #
 # # 无委托持仓：逐仓单笔成交
 # result = matchInterface([[668802,1,0.1,2,1,1,400,1,1],[668803,1,0.1,2,1,1,400,1,-1]],-1,{'测试项':'逐仓持仓成交'})

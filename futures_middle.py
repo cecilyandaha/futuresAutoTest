@@ -310,7 +310,7 @@ def forceFlatPriceInterface(accountId,result):
 
     #通过公式计算出强平价格
     #逐仓强平价格 = 合约持仓均价-合约方向*(逐仓开仓保证金+逐仓额外保证金-逐仓持仓维持保证金)/（合约张数*合约单位）
-    #全仓强平价格 = 合约持仓均价-合约方向*(账户余额-逐仓冻结保证金-逐仓占用保证金-冻结手续费+全仓浮动盈亏（除本合约以外）-全仓持仓维持保证金-全仓委托维持保证金)/（合约张数*合约单位）
+    #全仓强平价格 = 合约持仓均价-合约方向*(账户余额-逐仓冻结保证金-逐仓占用保证金-冻结手续费+全仓浮动盈亏（除本合约以外）-全仓持仓维持保证金)/（合约张数*合约单位）
     # 计算所有合约的浮动盈亏
     # 计算所有合约的维保
 
@@ -329,7 +329,7 @@ def forceFlatPriceInterface(accountId,result):
                 #计算浮动盈亏和委托维保
                 float_profit_loss = 0 #浮动盈亏
                 posi_maintain_margin = 0 #持仓维保
-                active_maintain_margin = 0 #委托维保
+                # active_maintain_margin = 0 #委托维保
                 # 一次遍历每个合约
                 for pos in posi:
                     # 如果是全仓合约
@@ -337,23 +337,33 @@ def forceFlatPriceInterface(accountId,result):
                         conc = selectContract(pos['contract_id'])
                         # 如果有持仓计算浮动盈亏
                         if (pos['long_qty'] + pos['short_qty']) != 0 :
-                            posi_maintain_margin+=p['maintain_rate'] * p['open_amt']
+                            print('maintain_rate:%f'%(pos['maintain_rate']))
+                            print('open_amt:%f' % (pos['open_amt']))
+                            posi_maintain_margin+=pos['maintain_rate'] * pos['open_amt']
                             if pos['contract_id']!=p['contract_id']:
                                 float_profit_loss += (pos['open_amt'] / (pos['long_qty'] + pos['short_qty']) / conc[
                                     'contract_unit'] \
                                                       - Decimal.from_float(prices[pos['contract_id']]['clearPrice'])) \
                                                      * conc['contract_unit'] * (pos['long_qty'] - pos['short_qty'])
 
-                        # 如果有委托计算委托维保
-                        if (pos['frozen_long_qty'] + pos['frozen_short_qty']) != 0:
-                            actives = selectActives(accountId,pos['contract_id'])
-                            for active in actives:
-                                active_maintain_margin+=(active['quantity']-active['filled_quantity'])*active['price']* conc['contract_unit']*pos['maintain_rate']
+                        # # 如果有委托计算委托维保
+                        # if (pos['frozen_long_qty'] + pos['frozen_short_qty']) != 0:
+                        #     actives = selectActives(accountId,pos['contract_id'])
+                        #     for active in actives:
+                        #         active_maintain_margin+=(active['quantity']-active['filled_quantity'])*active['price']* conc['contract_unit']*pos['maintain_rate']
+                print('浮动盈亏 %f' %(float_profit_loss))
+                print('持仓维保 %f' % (posi_maintain_margin))
+                # print('委托维保 %f' % (active_maintain_margin))
+                print('总金额 %f' % (account['total_money'] + account['close_profit_loss']))
+                print('逐仓数据%f' %(account['isolated_frozen_posi_margin'] - account['isolated_posi_margin']))
+                print('冻结手续费 %f' % (account['order_frozen_money']))
                 flPrice = p['open_amt'] / (p['long_qty'] + p['short_qty'])/contract['contract_unit'] \
                           - (account['total_money'] + account['close_profit_loss']
                              - account['isolated_frozen_posi_margin'] - account['isolated_posi_margin']
-                             - account['order_frozen_money'] + float_profit_loss-active_maintain_margin- posi_maintain_margin)\
+                             - account['order_frozen_money'] + float_profit_loss- posi_maintain_margin)\
                              /(p['long_qty'] - p['short_qty']) / contract['contract_unit']
+                print('flPrice:%f' %(flPrice))
+
         flPrices.append({'contract_id':p['contract_id'],'flPrice':float(flPrice),'side': ( 1 if p['long_qty']!=0 else -1)
                             ,'variety':contract['variety_id'],'clearPrice':prices[p['contract_id']]['clearPrice']})
     result['flPrices']=flPrices
@@ -369,10 +379,10 @@ def foreFlatInterface(accountId,flPrices,result):
         ctrprice=0
         if f['side'] == 1:
             #做多持仓调整指数价格为flPrice+0.001
-            ctrprice = round(f['flPrice'] + 0.001, 4)
+            ctrprice = round(f['flPrice'] + 0.01, 3)
         if f['side'] == -1:
             #做空持仓调整指数价格为flPrice-0.001
-            ctrprice = round(f['flPrice'] - 0.001, 4)
+            ctrprice = round(f['flPrice'] - 0.01, 3)
         for i in range(3):
             controlIndexPrice(f['variety'], ctrprice)
             print('强平边界值：%f ： %f '%(ctrprice,getPrice(f['contract_id'])['clearPrice']))
@@ -382,6 +392,7 @@ def foreFlatInterface(accountId,flPrices,result):
                 msg['指数设置到强平边界值'+str(f['contract_id'])]=False
                 result['msg'] = msg
                 return result
+        time.sleep(5)
         if isFlatInterface(accountId,f['contract_id'])!=0:
             msg['强平边界值验证']=False
             result['msg'] = msg
@@ -391,10 +402,10 @@ def foreFlatInterface(accountId,flPrices,result):
         ctrprice=0
         if f['side'] == 1:
             #做多持仓调整指数价格为flPrice+0.001
-            ctrprice = round(f['flPrice'] - 0.00001, 6)
+            ctrprice = round(f['flPrice'] - 0.01, 3)
         if f['side'] == -1:
             #做空持仓调整指数价格为flPrice-0.001
-            ctrprice = round(f['flPrice'] + 0.00001, 6)
+            ctrprice = round(f['flPrice'] + 0.01, 3)
         for i in range(3):
             controlIndexPrice(f['variety'], ctrprice)
             print('强平：%f ： %f ' % (ctrprice, getPrice(f['contract_id'])['clearPrice']))
@@ -405,13 +416,15 @@ def foreFlatInterface(accountId,flPrices,result):
                 msg['指数设置到强平价格'+str(f['contract_id'])]=False
                 result['msg'] = msg
                 return result
+        time.sleep(8)
         if isFlatInterface(accountId,f['contract_id'])!=1:
             msg['强平验证']=False
             result['msg'] = msg
             return result
+        # 指数设置为原始值
         for i in range(3):
             controlIndexPrice(f['variety'], f['clearPrice'])
-            time.sleep(5)
+            print('指数回正：%f ： %f ' % (f['clearPrice'], getPrice(f['contract_id'])['clearPrice']))
             if f['clearPrice'] == getPrice(f['contract_id'])['clearPrice']:
                 break
             elif i == 2:
