@@ -223,5 +223,9 @@ result = activeOrderInterface([668803,2,0,1,1,1,11500,10,1],{'测试项':'全仓
 # print(result)
 #
 # # # ************************************************************************************************
+result = forceFlatPriceInterface(668803,{'测试项':'获取用户强平价格'})
+print(result)
+print(result['flPrices'])
 
-forceFlatInterface(668803)
+result = foreFlatInterface(668803,result['flPrices'],{'测试项':'强平验证'})
+print(result)

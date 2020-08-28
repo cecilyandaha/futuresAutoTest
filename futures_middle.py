@@ -360,7 +360,7 @@ def forceFlatPriceInterface(accountId,result):
     return result
 
 ## 强平状态验证流程
-def foreFlatOneInterface(accountId,flPrices,result):
+def foreFlatInterface(accountId,flPrices,result):
     msg={}
     #强平验证流程
     for f in flPrices:
@@ -376,6 +376,8 @@ def foreFlatOneInterface(accountId,flPrices,result):
         for i in range(3):
             controlIndexPrice(f['variety'], ctrprice)
             time.sleep(3)
+            print(ctrprice)
+            print(getPrice(f['contract_id'])['clearPrice'])
             if ctrprice == getPrice(f['contract_id'])['clearPrice']:
                 break
             elif i == 2:
@@ -419,11 +421,102 @@ def foreFlatOneInterface(accountId,flPrices,result):
                 return result
     return result
 
+## 触发某个合约强平或者强减少
+#flag 为0触发强平，为1触发强减
+def tiggerForeInterface(accountId,contractId,flPrices,result,falg=0):
+    msg={}
+    #强平验证流程
+    for f in flPrices:
+        if f['contract_id']==contractId:
+            # 判断方向
+            ctrprice = 0
+            if f['side'] == 1:
+                # 做多持仓调整指数价格为flPrice+0.001
+                ctrprice = round(f['flPrice'] - 0.00001, 6)
+            if f['side'] == -1:
+                # 做空持仓调整指数价格为flPrice-0.001
+                ctrprice = round(f['flPrice'] + 0.00001, 6)
+            for i in range(3):
+                controlIndexPrice(f['variety'], ctrprice)
+                time.sleep()
+                if ctrprice == getPrice(f['contract_id'])['clearPrice']:
+                    break
+                elif i == 2:
+                    msg['指数设置到强平(减)价格' + str(f['contract_id'])] = False
+                    result['msg'] = msg
+                    return result
+            # 强平判断
+            if falg==0:
+                if isFlatInterface(accountId, f['contract_id']) != 1:
+                    msg['强平验证'] = False
+                    result['msg'] = msg
+                    return result
+            # 强减判断
+            if falg==1:
+                pass
+
+        result['msg'] = msg
+        result['state'] = True
+    return result
+
+## 强减价格计算
+def forceReductionPriceInterface(accountId,result):
+    msg={}
+    flPrices=[]
+    # 获取基础数据posi、account、指数、标记价格
+    account = selectAccout(accountId)
+    prices = getAllPrice()
+    posi = selectPosi(accountId)
+    contracts = selectContract()
+
+    #通过公式计算出强平价格
+    #逐仓强平价格 = 合约持仓均价-合约方向*(逐仓开仓保证金+逐仓额外保证金-开仓金额*taker手续费)/（合约张数*合约单位）
+    #全仓强平价格 = 合约持仓均价-合约方向*(账户余额-逐仓冻结保证金-逐仓占用保证金-冻结手续费+全仓浮动盈亏（除本合约以外）-(开仓金额(所有全仓合约)+委托金(所有全仓持仓))*taker手续费))/（合约张数*合约单位）
+    # 计算所有合约的浮动盈亏
+    # 计算所有合约的维保
+
+    for p in posi:
+        contract = selectContract(p['contract_id'])
+        frPrice=0
+        # 如果该合约有持仓就进行计算
+        if (p['long_qty']+p['short_qty'])!=0:
+            # 该合约为逐仓
+            if p['margin_type'] == 2:
+                frPrice = p['open_amt'] / (p['long_qty'] + p['short_qty'])/contract['contract_unit'] - (
+                            p['init_margin'] + p['extra_margin'] - contract['taker_fee_ratio']* p['open_amt']) / (
+                                      p['long_qty'] - p['short_qty']) / contract['contract_unit']
+            # 该合约为全仓
+            elif p['margin_type'] == 1:
+                #计算浮动盈亏和委托维保
+                posi_taker_fee = 0 #持仓平仓手续费
+                active_taker_fee = 0 #委托平仓手续费
+                # 一次遍历每个合约
+                for pos in posi:
+                    # 如果是全仓合约
+                    if pos['margin_type'] == 1:
+                        conc = selectContract(pos['contract_id'])
+                        # 如果有持仓计算浮动盈亏
+                        if (pos['long_qty'] + pos['short_qty']) != 0 :
+                            posi_taker_fee+=p['taker_fee_ratio'] * p['open_amt']
+
+                        # 如果有委托计算委托维保
+                        if (pos['frozen_long_qty'] + pos['frozen_short_qty']) != 0:
+                            actives = selectActives(accountId,pos['contract_id'])
+                            for active in actives:
+                                active_taker_fee+=(active['quantity']-active['filled_quantity'])*active['price']* conc['contract_unit']*pos['taker_fee_ratio']
+                frPrice = p['open_amt'] / (p['long_qty'] + p['short_qty'])/contract['contract_unit'] \
+                          - (account['total_money'] + account['close_profit_loss']
+                             - account['isolated_frozen_posi_margin'] - account['isolated_posi_margin']
+                             - account['order_frozen_money'] - posi_taker_fee-active_taker_fee)\
+                             /(p['long_qty'] - p['short_qty']) / contract['contract_unit']
+        frPrice.append({'contract_id':p['contract_id'],'frPrice':float(frPrice),'side': ( 1 if p['long_qty']!=0 else -1)
+                            ,'variety':contract['variety_id'],'clearPrice':prices[p['contract_id']]['clearPrice']})
+    result['frPrice']=frPrice
+    return result
 
 
 
 
-#指数推送到强平价格，读取core_
 
 
 
