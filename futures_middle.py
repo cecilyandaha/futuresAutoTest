@@ -359,8 +359,8 @@ def forceFlatPriceInterface(accountId,result):
     result['flPrices']=flPrices
     return result
 
-## 强平验证流程
-def foreFlatInterface(accountId,flPrices,result):
+## 强平状态验证流程
+def foreFlatOneInterface(accountId,flPrices,result):
     msg={}
     #强平验证流程
     for f in flPrices:
