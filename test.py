@@ -27,9 +27,4 @@ def sub(id,a, b):
 # aaa='bid_user_id' if posiQty<0 else 'ask_user_id'
 # print(aaa)
 #!/usr/bin/python 2 #-*-coding:utf-8-*- 3
-a=[1,2,3,4]
-
-for i in a:
-    print(i)
-    for ii in a:
-        print(ii)
+print(0.0==0)

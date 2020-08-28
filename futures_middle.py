@@ -450,10 +450,17 @@ def tiggerForeInterface(accountId,contractId,flPrices,result,falg=0):
                 if isFlatInterface(accountId, f['contract_id']) != 1:
                     msg['强平验证'] = False
                     result['msg'] = msg
+                    result['state'] = False
                     return result
-            # 强减判断
+            # 强减判断 依据是否还有持仓
             if falg==1:
-                pass
+                all_qty = selectPosi(accountId, contractId)['long_qty'] + selectPosi(accountId, contractId)['short_qty']
+                +selectPosi(accountId, contractId)['frozen_long_qty']+selectPosi(accountId, contractId)['frozen_short_qty']+selectPosi(accountId, contractId)['frozen_close_qty']
+                if float(all_qty)!=0:
+                    msg['强平验证'] = False
+                    result['msg'] = msg
+                    result['state'] = False
+                    return result
 
         result['msg'] = msg
         result['state'] = True
