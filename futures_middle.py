@@ -357,7 +357,7 @@ def forceFlatPriceInterface(accountId,result):
         flPrices.append({'contract_id':p['contract_id'],'flPrice':float(flPrice),'side': ( 1 if p['long_qty']!=0 else -1)
                             ,'variety':contract['variety_id'],'clearPrice':prices[p['contract_id']]['clearPrice']})
     result['flPrices']=flPrices
-    return flPrices
+    return result
 
 ## 强平验证流程
 def foreFlatInterface(accountId,flPrices,result):
@@ -375,7 +375,7 @@ def foreFlatInterface(accountId,flPrices,result):
             ctrprice = round(f['flPrice'] - 0.001, 4)
         for i in range(3):
             controlIndexPrice(f['variety'], ctrprice)
-            time.sleep()
+            time.sleep(3)
             if ctrprice == getPrice(f['contract_id'])['clearPrice']:
                 break
             elif i == 2:
@@ -386,15 +386,6 @@ def foreFlatInterface(accountId,flPrices,result):
             msg['强平边界值验证']=False
             result['msg'] = msg
             return result
-        for i in range(3):
-            controlIndexPrice(f['variety'], f['clearPrice'])
-            time.sleep()
-            if f['clearPrice'] == getPrice(f['contract_id'])['clearPrice']:
-                break
-            elif i == 2:
-                msg['指数从强平边界值设置回原值'+str(f['contract_id'])]=False
-                result['msg'] = msg
-                return result
         #指数推送到强平价格
         #判断方向
         ctrprice=0
@@ -403,7 +394,7 @@ def foreFlatInterface(accountId,flPrices,result):
             ctrprice = round(f['flPrice'] - 0.00001, 6)
         if f['side'] == -1:
             #做空持仓调整指数价格为flPrice-0.001
-            ctrprice = round(f['flPrice'] + 0.00001, 5)
+            ctrprice = round(f['flPrice'] + 0.00001, 6)
         for i in range(3):
             controlIndexPrice(f['variety'], ctrprice)
             time.sleep()
