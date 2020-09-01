@@ -219,13 +219,17 @@ def selectActive(account,n=0):
     return result
 
 # 查询某个合约所有状态为2和3的合约
-def selectActives(account,contractId,n=0):
+def selectActives(account,contractId,order='uuid',side=0,n=0):
     tbname='core_order_future_'+str(account)[-1]
-    sql='SELECT * FROM '+ tbname +' WHERE user_id='+str(account)+' AND contract_id = '+str(contractId)+' AND order_status in (2,3) ORDER BY uuid DESC '
+    condition='user_id='+str(account)+' AND contract_id = '+str(contractId)
+    if side!=0:
+        condition+= 'AND side='+str(side)
+    sql=('SELECT * FROM '+ tbname +' WHERE %s AND order_status in (2,3) ORDER BY %s DESC '%(condition,order))
     if n==1:
         sql=sql+'LIMIT 0,1 '
     result=operSql(sql,n)
     return result
+
 # 查询一条委托条件为 uuid
 def selectActiveByuuid(account,uuid):
     tbname='core_order_future_'+str(account)[-1]
@@ -233,7 +237,10 @@ def selectActiveByuuid(account,uuid):
     result = operSql(sql,1)
     return result
 
-
+## 统一调用sql
+def sqlExe(sql):
+    result = operSql(sql)
+    return result
 
 # 查询最新成交
 def selectMatch(account,n=0):

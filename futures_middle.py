@@ -392,7 +392,7 @@ def foreFlatInterface(accountId,flPrices,result):
                 msg['指数设置到强平边界值'+str(f['contract_id'])]=False
                 result['msg'] = msg
                 return result
-        time.sleep(5)
+        time.sleep(10)
         if isFlatInterface(accountId,f['contract_id'])!=0:
             msg['强平边界值验证']=False
             result['msg'] = msg
@@ -409,14 +409,13 @@ def foreFlatInterface(accountId,flPrices,result):
         for i in range(3):
             controlIndexPrice(f['variety'], ctrprice)
             print('强平：%f ： %f ' % (ctrprice, getPrice(f['contract_id'])['clearPrice']))
-            time.sleep(5)
             if ctrprice == getPrice(f['contract_id'])['clearPrice']:
                 break
             elif i == 2:
                 msg['指数设置到强平价格'+str(f['contract_id'])]=False
                 result['msg'] = msg
                 return result
-        time.sleep(8)
+        time.sleep(10)
         if isFlatInterface(accountId,f['contract_id'])!=1:
             msg['强平验证']=False
             result['msg'] = msg
@@ -530,6 +529,35 @@ def forceReductionPriceInterface(accountId,result):
         frPrice.append({'contract_id':p['contract_id'],'frPrice':float(frPrice),'side': ( 1 if p['long_qty']!=0 else -1)
                             ,'variety':contract['variety_id'],'clearPrice':prices[p['contract_id']]['clearPrice']})
     result['frPrice']=frPrice
+    return result
+
+## 冻结保证金验证流程
+def forzenMarginInterface(accountId,contractid,result ):
+    msg={}
+    rep = getActive(accountId,contractid)
+    # 计算出卖单总数
+    orders = selectActives( accountId,contractid,order='price' )
+    posi = selectPosi(accountId,contractid)
+    frozenMargin=0
+    bidnum=0
+    for order in orders[:]:
+        if order['side']==1:
+            break
+        elif order['side']==-1:
+            frozenMargin+=(order['quantity'] - order['filled_quantity']) * order[
+                                        'price'] * order['contract_unit'] * posi['init_rate']
+            bidnum+=(order['quantity'] - order['filled_quantity'])
+            orders.remove(order)
+    for order in orders:
+        if bidnum - (order['quantity'] - order['filled_quantity'])>=0:
+            bidnum-= (order['quantity'] - order['filled_quantity'])
+            continue
+        elif bidnum - (order['quantity'] - order['filled_quantity'])<0 and bidnum>0:
+            frozenMargin+=(order['quantity'] - order['filled_quantity']-bidnum)* posi['init_rate']
+        elif bidnum - (order['quantity'] - order['filled_quantity'])<0 and bidnum<=0:
+            frozenMargin+=(order['quantity'] - order['filled_quantity'])* posi['init_rate']
+    ActualToStandard(frozenMargin,posi['frozen_init_margin'],'float','frozen_init_margin',msg)
+    result['msg']=msg
     return result
 
 
