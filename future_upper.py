@@ -232,3 +232,6 @@ from futures_middle import *
 #
 # result = foreFlatInterface(668803,result['flPrices'],{'测试项':'强平验证'})
 # print(result)
+
+result_price = forceReductionPriceInterface('668802',{'测试项':'获取用户强减价格'})
+print(result_price)

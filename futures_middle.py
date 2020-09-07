@@ -371,8 +371,9 @@ def forceFlatPriceInterface(accountId,result):
                              /(p['long_qty'] - p['short_qty']) / contract['contract_unit']
                 print('flPrice:%f' %(flPrice))
 
-        flPrices.append({'contract_id':p['contract_id'],'flPrice':float(flPrice),'side': ( 1 if p['long_qty']!=0 else -1)
-                            ,'variety':contract['variety_id'],'clearPrice':prices[p['contract_id']]['clearPrice']})
+            flPrices.append(
+                {'contract_id': p['contract_id'], 'flPrice': float(flPrice), 'side': (1 if p['long_qty'] != 0 else -1)
+                    , 'variety': contract['variety_id'], 'clearPrice': prices[p['contract_id']]['clearPrice']})
     result['flPrices']=flPrices
     return result
 
@@ -521,20 +522,22 @@ def forceReductionPriceInterface(accountId,result):
                         conc = selectContract(pos['contract_id'])
                         # 如果有持仓计算浮动盈亏
                         if (pos['long_qty'] + pos['short_qty']) != 0 :
-                            posi_taker_fee+=p['taker_fee_ratio'] * p['open_amt']
+                            posi_taker_fee+=conc['taker_fee_ratio'] * pos['open_amt']
 
                         # 如果有委托计算委托维保
-                        if (pos['frozen_long_qty'] + pos['frozen_short_qty']) != 0:
-                            actives = selectActives(accountId,pos['contract_id'])
-                            for active in actives:
-                                active_taker_fee+=(active['quantity']-active['filled_quantity'])*active['price']* conc['contract_unit']*pos['taker_fee_ratio']
+                        # if (pos['frozen_long_qty'] + pos['frozen_short_qty']) != 0:
+                        #     actives = selectActives(accountId,pos['contract_id'])
+                        #     for active in actives:
+                        #         active_taker_fee+=(active['quantity']-active['filled_quantity'])*active['price']* conc['contract_unit']*pos['taker_fee_ratio']
                 frPrice = p['open_amt'] / (p['long_qty'] + p['short_qty'])/contract['contract_unit'] \
                           - (account['total_money'] + account['close_profit_loss']
                              - account['isolated_frozen_posi_margin'] - account['isolated_posi_margin']
                              - account['order_frozen_money'] - posi_taker_fee-active_taker_fee)\
                              /(p['long_qty'] - p['short_qty']) / contract['contract_unit']
-        flPrices.append({'contract_id':p['contract_id'],'frPrice':float(frPrice),'side': ( 1 if p['long_qty']!=0 else -1)
-                            ,'variety':contract['variety_id'],'clearPrice':prices[p['contract_id']]['clearPrice']})
+            flPrices.append(
+                {'contract_id': p['contract_id'], 'frPrice': float(frPrice), 'side': (1 if p['long_qty'] != 0 else -1)
+                    , 'variety': contract['variety_id'], 'clearPrice': prices[p['contract_id']]['clearPrice']})
+
     result['flPrices']=flPrices
     return result
 
