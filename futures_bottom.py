@@ -1,4 +1,7 @@
+import math
+
 from util import *
+from decimal import *
 #url_base='http://192.168.104.132:8301'
 url_base='http://192.168.105.155:8445'
 
@@ -262,9 +265,12 @@ def selectPosi(account,contract_id=0):
     return result
 
 # 查询用户资产
-def selectAccout(account,currency_id=2):
-    sql='SELECT * FROM core_account_future WHERE user_id = '+str(account)+' AND currency_id='+str(currency_id)
-    result=operSql(sql,currency_id)
+def selectAccout(account=0,currency_id=2):
+    place=''
+    if account!=0:
+        place = ' and user_id = '+str(account)
+    sql='SELECT * FROM core_account_future WHERE currency_id='+str(currency_id) +place
+    result=operSql(sql,account)
     return result
 
 # 查询某合约的所有用户
@@ -292,14 +298,14 @@ def selectMargin(variety_id,contract_id=0,user_id=0):
     return result
 
 ## sql获取数据统一比对方法
-def omnipotent(sql,standard,fname,dtype,msg):
+def omnipotent(sql,standard,fname,dtype,msg,decimal=8):
     #print(sql)
     Actual = operSql(sql, 1)[fname]
 
-    ActualToStandard(Actual,standard,dtype,fname,msg)
+    ActualToStandard(Actual,standard,dtype,fname,msg,decimal=8)
 
 # 统一比对方法
-def ActualToStandard(Actual,standard,dtype,fname,msg):
+def ActualToStandard(Actual,standard,dtype,fname,msg,decimal=8):
 
     if Actual == None:
         Actual=0
@@ -308,7 +314,7 @@ def ActualToStandard(Actual,standard,dtype,fname,msg):
             print(fname,Actual,standard)
             msg[fname] = False
     elif dtype=='float':
-        if round(float(Actual),8) != round(float(standard),8):
+        if  math.floor(float(Actual)*10**decimal)/10**decimal != math.floor(float(standard)*10**decimal)/10**decimal:
             print(fname,Actual, standard)
             msg[fname] = False
     elif dtype=='str':
@@ -317,19 +323,19 @@ def ActualToStandard(Actual,standard,dtype,fname,msg):
             msg[fname] = False
 
 ## 冻结保证金验证流程
-def forzenMarginOmn(accountId,contractid,msg ):
-    rep = getActive(accountId,contractid)
+def forzenMarginOmn(accountId,contractid,init_rate,contract_unit,frozen_init_margin,msg ):
+
     # 计算出卖单总数
     orders = selectActives( accountId,contractid,order='price' )
-    posi = selectPosi(accountId,contractid)
     frozenMargin=0
     bidnum=0
     for order in orders[:]:
+        print(order)
         if order['side']==1:
             break
         elif order['side']==-1:
             frozenMargin+=(order['quantity'] - order['filled_quantity']) * order[
-                                        'price'] * order['contract_unit'] * posi['init_rate']
+                                        'price'] * contract_unit * init_rate
             bidnum+=(order['quantity'] - order['filled_quantity'])
             orders.remove(order)
     for order in orders:
@@ -337,10 +343,10 @@ def forzenMarginOmn(accountId,contractid,msg ):
             bidnum-= (order['quantity'] - order['filled_quantity'])
             continue
         elif bidnum - (order['quantity'] - order['filled_quantity'])<0 and bidnum>0:
-            frozenMargin+=(order['quantity'] - order['filled_quantity']-bidnum)* posi['init_rate']
+            frozenMargin+=(order['quantity'] - order['filled_quantity']-bidnum)* init_rate
         elif bidnum - (order['quantity'] - order['filled_quantity'])<0 and bidnum<=0:
-            frozenMargin+=(order['quantity'] - order['filled_quantity'])* posi['init_rate']
-    ActualToStandard(frozenMargin,posi['frozen_init_margin'],'float','frozen_init_margin',msg)
+            frozenMargin+=(order['quantity'] - order['filled_quantity'])* init_rate
+    ActualToStandard(frozenMargin,frozen_init_margin,'float','frozen_init_margin',msg)
 
     return msg
 
@@ -369,7 +375,7 @@ def assetOmnipotent(user_id,msg):
         frozen_long_qty = int(posi['frozen_long_qty'])    # 多头委托冻结量
         frozen_short_qty = int(posi['frozen_short_qty'])  # 空头委托冻结量
         frozen_close_qty = int(posi['frozen_close_qty'])  # 平仓委托冻结量
-        init_rate = float(posi['init_rate'])  #初始保证金率
+        init_rate = posi['init_rate'] #初始保证金率
 
         # 核对long_qty多头开仓量、short_qty空头持仓量
         posiQtySql = ("SELECT "
@@ -412,16 +418,16 @@ def assetOmnipotent(user_id,msg):
             posiQty = abs(posiQty)
             for m in matchs:
                 if m['match_qty'] > posiQty:
-                    open_amt_M += float(m['match_price']*posiQty)
+                    open_amt_M += float(m['match_price']*posiQty*contract_unit)
                     break
                 else:
                     open_amt_M += float(m['match_amt'])
                     posiQty -= m['match_qty']
-            ActualToStandard(open_amt,open_amt_M,'float','open_amt',msg)
+            ActualToStandard(open_amt,open_amt_M,'float','open_amt',msg,2)
 
         # 核对 frozen_init_margin委托冻结保证金
         orderTableName='core_order_future_'+ str(user_id)[-1]
-        forzenMarginOmn(user_id, c['contract_id'],msg)
+        forzenMarginOmn(user_id, c['contract_id'],init_rate,contract_unit,frozen_init_margin,msg)
 
         # 核对 frozen_long_qty委托多头开仓数量
         frozenLongQtySql = ('SELECT SUM(quantity-filled_quantity) frozen_long_qty FROM %s ' \

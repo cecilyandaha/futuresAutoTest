@@ -2,7 +2,7 @@ from futures_middle import *
 
 # # 红冲蓝补
 # # 蓝补
-# result = transferAssetInterface([668803,2,1000,1],{'测试项':'蓝补资金'})
+# result = transferAssetInterface([666669,2,10000,1],{'测试项':'蓝补资金'})
 # print(result)
 # # 红冲
 # result = transferAssetInterface([668803,2,990,-1],{'测试项':'红冲资金'})
@@ -109,9 +109,10 @@ from futures_middle import *
 # print(result)
 #
 # # 无委托持仓：逐仓多笔成交
-# result = matchInterface([[668802,2,0.4,2,1,1,11600,1,1],[668803,2,0.4,2,1,1,11600,1,-1]],-1,{'测试项':'逐仓持仓成交1'})
+# cancelAllOrderInterface(2,{'测试项':'全部撤单'})
+# result = matchInterface([[666669,2,0.4,2,1,1,11600,1,-1],[666670,2,0.4,2,1,1,11600,1,1]],1,{'测试项':'逐仓持仓成交1'})
 # print(result)
-# result = matchInterface([[668802,2,0.4,2,1,1,11601,12,-1],[668803,2,0.4,2,1,1,11601,12,1]],1,{'测试项':'逐仓持仓成交2'})
+# result = matchInterface([[666669,2,0.4,2,1,1,11601,5,1],[666670,2,0.4,2,1,1,11601,5,-1]],-1,{'测试项':'逐仓持仓成交2'})
 # print(result)
 #
 # # 无委托持仓：全仓逐仓混合成交
@@ -225,9 +226,9 @@ from futures_middle import *
 # print(result)
 #
 # # # ************************************************************************************************
-result = forceFlatPriceInterface(668803,{'测试项':'获取用户强平价格'})
-print(result)
-print(result['flPrices'])
-
-result = foreFlatInterface(668803,result['flPrices'],{'测试项':'强平验证'})
-print(result)
+# result = forceFlatPriceInterface(668803,{'测试项':'获取用户强平价格'})
+# print(result)
+# print(result['flPrices'])
+#
+# result = foreFlatInterface(668803,result['flPrices'],{'测试项':'强平验证'})
+# print(result)

@@ -149,7 +149,16 @@ def cancelAllOrderInterface(contractId,result):
     result['msg'] = msg
     return result
 
-
+#所有用户数据校验
+def allUsersOmnInterface(result):
+    msg={}
+    # 查询所有有过该合约持仓的用户
+    users = selectAccout()
+    for user in users:
+        msg[user['user_id']]=assetOmnipotent(user['user_id'], {})
+    result['msg'] = msg
+    return result
+print(allUsersOmnInterface({}))
 # 成交（先撤单，保证成交数据与原始数据一致）
 #orders=[[bid_user_id,contractId,marginRate,marginType,orderType,positionEffect,price,quantity,side,bid_order_id],
 #        [ask_user_id,contractId,marginRate,marginType,orderType,positionEffect,price,quantity,side,ask_order_id]]
@@ -436,10 +445,10 @@ def tiggerForeInterface(accountId,contractId,flPrices,result,falg=0):
             ctrprice = 0
             if f['side'] == 1:
                 # 做多持仓调整指数价格为flPrice+0.001
-                ctrprice = round(f['flPrice'] - 0.00001, 6)
+                ctrprice = round(f['flPrice'] - 0.01, 3)
             if f['side'] == -1:
                 # 做空持仓调整指数价格为flPrice-0.001
-                ctrprice = round(f['flPrice'] + 0.00001, 6)
+                ctrprice = round(f['flPrice'] + 0.01, 3)
             for i in range(3):
                 controlIndexPrice(f['variety'], ctrprice)
                 if ctrprice == getPrice(f['contract_id'])['clearPrice']:
@@ -531,6 +540,11 @@ def forzenMarginInterface(accountId,contractid,result ):
     result['msg']=msg
     return result
 
+## 某合约所有拥有持仓的均进行平仓接口
+
+
+
+## 保证金阶梯验证接口
 
 
 
