@@ -533,9 +533,9 @@ def forceReductionPriceInterface(accountId,result):
                              - account['isolated_frozen_posi_margin'] - account['isolated_posi_margin']
                              - account['order_frozen_money'] - posi_taker_fee-active_taker_fee)\
                              /(p['long_qty'] - p['short_qty']) / contract['contract_unit']
-        frPrice.append({'contract_id':p['contract_id'],'frPrice':float(frPrice),'side': ( 1 if p['long_qty']!=0 else -1)
+        flPrices.append({'contract_id':p['contract_id'],'frPrice':float(frPrice),'side': ( 1 if p['long_qty']!=0 else -1)
                             ,'variety':contract['variety_id'],'clearPrice':prices[p['contract_id']]['clearPrice']})
-    result['frPrice']=frPrice
+    result['flPrices']=flPrices
     return result
 
 ## 冻结保证金验证流程
