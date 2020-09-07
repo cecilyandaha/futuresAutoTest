@@ -36,37 +36,42 @@ def activeOrderInterface(data,result):
             msg['获取委托'] = False
         else:
             redisjson = resp3['text']
-            redisOrder=redisjson[0]
-            mysqlOrder = selectActive(data[0], 1)
-            contract = selectContract(data[1])
-            ActualToStandard(redisOrder['accountId'],data[0] , 'int', 'accountId', msg)
-            ActualToStandard(mysqlOrder['user_id'], data[0], 'int', 'user_id', msg)
-            ActualToStandard(redisOrder['contractId'], data[1], 'int', 'contractId', msg)
-            ActualToStandard(mysqlOrder['contract_id'], data[1], 'int', 'contractId', msg)
-            if data[3]==1:
-                ActualToStandard(redisOrder['initMarginRate'],mysqlOrder['margin_rate'], 'float', 'margin_rate', msg)
+            if redisjson==[]:
+                msg['委托成交'] = True
             else:
-                ActualToStandard(redisOrder['initMarginRate'], mysqlOrder['margin_rate'], 'float', 'margin_rate', msg)
-                ActualToStandard(redisOrder['initMarginRate'], data[2], 'float', 'margin_rate', msg)
-            ActualToStandard(redisOrder['marginType'], data[3], 'int', 'marginType', msg)
-            ActualToStandard(mysqlOrder['margin_type'], data[3], 'int', 'marginType', msg)
-            ActualToStandard(redisOrder['order_type'], data[4], 'int', 'order_type', msg)
-            ActualToStandard(mysqlOrder['order_type'], data[4], 'int', 'order_type', msg)
-            ActualToStandard(redisOrder['position_effect'], data[5], 'int', 'position_effect', msg)
-            ActualToStandard(mysqlOrder['position_effect'], data[5], 'int', 'position_effect', msg)
-            ActualToStandard(redisOrder['orderPrice'], data[6], 'float', 'orderPrice', msg)
-            ActualToStandard(mysqlOrder['orderPrice'], data[6], 'float', 'orderPrice', msg)
-            ActualToStandard(redisOrder['orderPrice'], redisOrder['frozenPrice'], 'float', 'frozenPrice', msg)
-            ActualToStandard(redisOrder['orderQty'], data[7], 'int', 'orderQty', msg)
-            ActualToStandard(mysqlOrder['orderQty'], data[7], 'int', 'orderQty', msg)
-            ActualToStandard(redisOrder['side'], data[8], 'int', 'side', msg)
-            ActualToStandard(mysqlOrder['side'], data[8], 'int', 'side', msg)
-            ActualToStandard(redisOrder['clOrderId'], mysqlOrder['client_order_id'], 'str', 'client_order_id', msg)
-            ActualToStandard(redisOrder['orderId'], mysqlOrder['uuid'], 'str', 'uuid', msg)
-            ActualToStandard(redisOrder['orderTime'], mysqlOrder['timestamp'], 'str', 'timestamp', msg)
-            ActualToStandard(redisOrder['feeRate'], mysqlOrder['maker_fee_ratio'], 'float', 'maker_fee_ratio', msg)
-            ActualToStandard(redisOrder['contractUnit'], mysqlOrder['contractUnit'], 'float', 'contractUnit', msg)
-            ActualToStandard(redisOrder['orderStatus'], 2, 'int', 'orderStatus', msg)
+                redisOrder = redisjson[0]
+                mysqlOrder = selectActive(data[0], 1)
+                contract = selectContract(data[1])
+                ActualToStandard(redisOrder['accountId'], data[0], 'int', 'accountId', msg)
+                ActualToStandard(mysqlOrder['user_id'], data[0], 'int', 'user_id', msg)
+                ActualToStandard(redisOrder['contractId'], data[1], 'int', 'contractId', msg)
+                ActualToStandard(mysqlOrder['contract_id'], data[1], 'int', 'contractId', msg)
+                if data[3] == 1:
+                    ActualToStandard(redisOrder['initMarginRate'], mysqlOrder['margin_rate'], 'float', 'margin_rate',
+                                     msg)
+                else:
+                    ActualToStandard(redisOrder['initMarginRate'], mysqlOrder['margin_rate'], 'float', 'margin_rate',
+                                     msg)
+                    ActualToStandard(redisOrder['initMarginRate'], data[2], 'float', 'margin_rate', msg)
+                ActualToStandard(redisOrder['marginType'], data[3], 'int', 'marginType', msg)
+                ActualToStandard(mysqlOrder['margin_type'], data[3], 'int', 'marginType', msg)
+                ActualToStandard(redisOrder['order_type'], data[4], 'int', 'order_type', msg)
+                ActualToStandard(mysqlOrder['order_type'], data[4], 'int', 'order_type', msg)
+                ActualToStandard(redisOrder['position_effect'], data[5], 'int', 'position_effect', msg)
+                ActualToStandard(mysqlOrder['position_effect'], data[5], 'int', 'position_effect', msg)
+                ActualToStandard(redisOrder['orderPrice'], data[6], 'float', 'orderPrice', msg)
+                ActualToStandard(mysqlOrder['orderPrice'], data[6], 'float', 'orderPrice', msg)
+                ActualToStandard(redisOrder['orderPrice'], redisOrder['frozenPrice'], 'float', 'frozenPrice', msg)
+                ActualToStandard(redisOrder['orderQty'], data[7], 'int', 'orderQty', msg)
+                ActualToStandard(mysqlOrder['orderQty'], data[7], 'int', 'orderQty', msg)
+                ActualToStandard(redisOrder['side'], data[8], 'int', 'side', msg)
+                ActualToStandard(mysqlOrder['side'], data[8], 'int', 'side', msg)
+                ActualToStandard(redisOrder['clOrderId'], mysqlOrder['client_order_id'], 'str', 'client_order_id', msg)
+                ActualToStandard(redisOrder['orderId'], mysqlOrder['uuid'], 'str', 'uuid', msg)
+                ActualToStandard(redisOrder['orderTime'], mysqlOrder['timestamp'], 'str', 'timestamp', msg)
+                ActualToStandard(redisOrder['feeRate'], mysqlOrder['maker_fee_ratio'], 'float', 'maker_fee_ratio', msg)
+                ActualToStandard(redisOrder['contractUnit'], mysqlOrder['contractUnit'], 'float', 'contractUnit', msg)
+                ActualToStandard(redisOrder['orderStatus'], 2, 'int', 'orderStatus', msg)
     assetOmnipotent(data[0],msg)
     result['msg'] = msg
     result['respData']=respData
