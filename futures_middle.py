@@ -55,7 +55,7 @@ def activeOrderInterface(data,result):
                     ActualToStandard(redisOrder['initMarginRate'], data[2], 'float', 'margin_rate', msg)
                 ActualToStandard(redisOrder['marginType'], data[3], 'int', 'marginType', msg)
                 ActualToStandard(mysqlOrder['margin_type'], data[3], 'int', 'marginType', msg)
-                ActualToStandard(redisOrder['order_type'], data[4], 'int', 'order_type', msg)
+                ActualToStandard(redisOrder['orderType'], data[4], 'int', 'orderType', msg)
                 ActualToStandard(mysqlOrder['order_type'], data[4], 'int', 'order_type', msg)
                 ActualToStandard(redisOrder['position_effect'], data[5], 'int', 'position_effect', msg)
                 ActualToStandard(mysqlOrder['position_effect'], data[5], 'int', 'position_effect', msg)
@@ -70,7 +70,6 @@ def activeOrderInterface(data,result):
                 ActualToStandard(redisOrder['orderId'], mysqlOrder['uuid'], 'str', 'uuid', msg)
                 ActualToStandard(redisOrder['orderTime'], mysqlOrder['timestamp'], 'str', 'timestamp', msg)
                 ActualToStandard(redisOrder['feeRate'], mysqlOrder['maker_fee_ratio'], 'float', 'maker_fee_ratio', msg)
-                ActualToStandard(redisOrder['contractUnit'], mysqlOrder['contractUnit'], 'float', 'contractUnit', msg)
                 ActualToStandard(redisOrder['orderStatus'], 2, 'int', 'orderStatus', msg)
     assetOmnipotent(data[0],msg)
     result['msg'] = msg
@@ -535,7 +534,7 @@ def forceReductionPriceInterface(accountId,result):
                              - account['order_frozen_money'] - posi_taker_fee-active_taker_fee)\
                              /(p['long_qty'] - p['short_qty']) / contract['contract_unit']
             flPrices.append(
-                {'contract_id': p['contract_id'], 'frPrice': float(frPrice), 'side': (1 if p['long_qty'] != 0 else -1)
+                {'contract_id': p['contract_id'], 'flPrice': float(frPrice), 'side': (1 if p['long_qty'] != 0 else -1)
                     , 'variety': contract['variety_id'], 'clearPrice': prices[p['contract_id']]['clearPrice']})
 
     result['flPrices']=flPrices

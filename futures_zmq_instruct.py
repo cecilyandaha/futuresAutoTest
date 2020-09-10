@@ -13,10 +13,18 @@ def to_decimal(f, p = 6):
 
 
 #参数更新推送
-def pushIndex():
+def paramRefresh():
     datajson={}
     datajson['message_type'] = 5009
     datajson['appl_id'] = 2
+    return datajson
+
+#罚没账户参数更新
+def core_super_userRefresh():
+    datajson={}
+    datajson['message_type'] = 5009
+    datajson['appl_id'] = 2
+    datajson['load_type'] = 2
     return datajson
 
 if __name__ == '__main__':
@@ -25,7 +33,7 @@ if __name__ == '__main__':
     context = zmq.Context()
     socket = context.socket(zmq.DEALER)
     socket.connect(TRADE_SERVER_URL)
-    datajson = pushIndex()
+    datajson = core_super_userRefresh()
     str_json = json.dumps(datajson).encode('utf-8')
     print(str_json)
     socket.send(str_json)
